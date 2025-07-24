@@ -1,8 +1,8 @@
 package miyucomics.hexical.data.prestidigitation
 
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
-import net.minecraft.entity.Entity
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.entity.Entity
+import net.minecraft.core.BlockPos
 
 interface PrestidigitationHandler {
 	fun tryHandleBlock(env: CastingEnvironment, position: BlockPos): Boolean = false

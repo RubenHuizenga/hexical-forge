@@ -6,19 +6,19 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.getPlayer
 import at.petrak.hexcasting.api.casting.iota.Iota
 import miyucomics.hexpose.iotas.getItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
 
 class OpHasAutograph : ConstMediaAction {
 	override val argc = 2
 	override fun execute(args: List<Iota>, env: CastingEnvironment): List<Iota> {
 		val stack = args.getItemStack(0, argc)
-		if (!stack.hasNbt())
+		if (!stack.hasTag())
 			return false.asActionResult
-		if (!stack.nbt!!.contains("autographs"))
+		if (!stack.tag!!.contains("autographs"))
 			return false.asActionResult
 		val player = args.getPlayer(1, argc)
-		val list = stack.nbt!!.getList("autographs", NbtElement.COMPOUND_TYPE.toInt())
-		return (list.count { (it as NbtCompound).getString("name") == player.entityName } > 0).asActionResult
+		val list = stack.tag!!.getList("autographs", Tag.TAG_COMPOUND.toInt())
+		return (list.count { (it as CompoundTag).getString("name") == player.scoreboardName } > 0).asActionResult
 	}
 }

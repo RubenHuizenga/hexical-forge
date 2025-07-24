@@ -2,9 +2,9 @@ package miyucomics.hexical.mixin;
 
 import at.petrak.hexcasting.client.gui.GuiSpellcasting;
 import miyucomics.hexical.registry.HexicalKeybinds;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,10 +18,10 @@ import vazkii.patchouli.client.book.gui.GuiBook;
 public abstract class ScreenMixin {
 	@Unique private static GuiSpellcasting staffScreen;
 
-	@Inject(method = "close", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "onClose", at = @At("HEAD"), cancellable = true)
 	void returnToStaff(CallbackInfo ci) {
 		if ((Screen) (Object) this instanceof GuiBook && staffScreen != null) {
-			MinecraftClient.getInstance().setScreen(staffScreen);
+			Minecraft.getInstance().setScreen(staffScreen);
 			staffScreen = null;
 			ci.cancel();
 		}
@@ -29,8 +29,8 @@ public abstract class ScreenMixin {
 
 	@Inject(method = "keyPressed", at = @At("HEAD"))
 	void openHexbook(int keycode, int scancode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
-		if ((Screen) (Object) this instanceof GuiSpellcasting screen && HexicalKeybinds.OPEN_HEXBOOK.matchesKey(keycode, scancode)) {
-			PatchouliAPI.get().openBookGUI(new Identifier("hexcasting", "thehexbook"));
+		if ((Screen) (Object) this instanceof GuiSpellcasting screen && HexicalKeybinds.OPEN_HEXBOOK.matches(keycode, scancode)) {
+			PatchouliAPI.get().openBookGUI(new ResourceLocation("hexcasting", "thehexbook"));
 			staffScreen = screen;
 		}
 	}

@@ -1,50 +1,67 @@
 package miyucomics.hexical.registry
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.option.KeyBinding
+import miyucomics.hexical.HexicalMain
+import net.minecraft.client.Minecraft
+import net.minecraft.client.KeyMapping
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.event.TickEvent
 import org.lwjgl.glfw.GLFW
+import io.netty.buffer.Unpooled
+import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraft.client.player.LocalPlayer
 
+@Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 object HexicalKeybinds {
 	@JvmField
-	val OPEN_HEXBOOK = KeyBinding("key.hexical.open_hexbook", GLFW.GLFW_KEY_N, "key.categories.hexical")
-	val TELEPATHY_KEYBIND = KeyBinding("key.hexical.telepathy", GLFW.GLFW_KEY_G, "key.categories.hexical")
-	private val EVOKE_KEYBIND = KeyBinding("key.hexical.evoke", GLFW.GLFW_KEY_R, "key.categories.hexical")
+	val OPEN_HEXBOOK = KeyMapping("key.hexical.open_hexbook", GLFW.GLFW_KEY_N, "key.categories.hexical")
+	val TELEPATHY_KEYBIND = KeyMapping("key.hexical.telepathy", GLFW.GLFW_KEY_G, "key.categories.hexical")
+	private val EVOKE_KEYBIND = KeyMapping("key.hexical.evoke", GLFW.GLFW_KEY_R, "key.categories.hexical")
 	private var states = mutableMapOf<String, Boolean>()
 
-	fun clientInit() {
-		KeyBindingHelper.registerKeyBinding(OPEN_HEXBOOK)
-		KeyBindingHelper.registerKeyBinding(EVOKE_KEYBIND)
-		KeyBindingHelper.registerKeyBinding(TELEPATHY_KEYBIND)
+	@SubscribeEvent
+	fun registerBindings(event: RegisterKeyMappingsEvent) {
+		event.register(OPEN_HEXBOOK)
+		event.register(EVOKE_KEYBIND)
+		event.register(TELEPATHY_KEYBIND)
+	}
+	
+	@Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = [Dist.CLIENT])
+	object HexicalClientKeybinds {
+		@SubscribeEvent
+		fun onClientTick(event: TickEvent.ClientTickEvent) {
+			if (event.phase == TickEvent.Phase.END) {
+				val client = Minecraft.getInstance()
 
-		ClientTickEvents.END_CLIENT_TICK.register { client: MinecraftClient ->
-			if (client.player == null)
-				return@register
+				if (client.player == null)
+					return
 
-			if (states.keys.contains(EVOKE_KEYBIND.translationKey)) {
-				if (states[EVOKE_KEYBIND.translationKey] == true && !EVOKE_KEYBIND.isPressed) {
-					ClientPlayNetworking.send(HexicalNetworking.END_EVOKING_CHANNEL, PacketByteBufs.empty())
-				} else if (states[EVOKE_KEYBIND.translationKey] == false && EVOKE_KEYBIND.isPressed) {
-					ClientPlayNetworking.send(HexicalNetworking.START_EVOKE_CHANNEL, PacketByteBufs.empty())
-				}
-			}
-
-			for (key in listOf(client.options.forwardKey, client.options.leftKey, client.options.rightKey, client.options.backKey, client.options.jumpKey, client.options.sneakKey, client.options.useKey, client.options.attackKey, TELEPATHY_KEYBIND, EVOKE_KEYBIND)) {
-				if (states.keys.contains(key.translationKey)) {
-					if (states[key.translationKey] == true && !key.isPressed) {
-						val buf = PacketByteBufs.create()
-						buf.writeString(key.translationKey)
-						ClientPlayNetworking.send(HexicalNetworking.RELEASED_KEY_CHANNEL, buf)
-					} else if (states[key.translationKey] == false && key.isPressed) {
-						val buf = PacketByteBufs.create()
-						buf.writeString(key.translationKey)
-						ClientPlayNetworking.send(HexicalNetworking.PRESSED_KEY_CHANNEL, buf)
+				if (states.keys.contains(EVOKE_KEYBIND.name)) {
+					val uuid = (client.player as LocalPlayer).uuid
+					if (states[EVOKE_KEYBIND.name] == true && !EVOKE_KEYBIND.isDown()) {
+						val packet = HexicalNetworking.EvokeStatePacket(uuid, false)
+						HexicalNetworking.sendToServer(packet)
+					} else if (states[EVOKE_KEYBIND.name] == false && EVOKE_KEYBIND.isDown()) {
+						val packet = HexicalNetworking.EvokeStatePacket(uuid, true)
+						HexicalNetworking.sendToServer(packet)
 					}
 				}
-				states[key.translationKey] = key.isPressed
+
+				for (key in listOf(client.options.keyUp, client.options.keyLeft, client.options.keyRight, client.options.keyDown, client.options.keyJump, client.options.keyShift, client.options.keyUse, client.options.keyAttack, TELEPATHY_KEYBIND, EVOKE_KEYBIND)) {
+					if (states.keys.contains(key.name)) {
+						if (states[key.name] == true && !key.isDown()) {
+							val packet = HexicalNetworking.KeyPressPacket(key.name, false)
+							HexicalNetworking.sendToServer(packet)
+						} else if (states[key.name] == false && key.isDown()) {
+							val packet = HexicalNetworking.KeyPressPacket(key.name, true)
+							HexicalNetworking.sendToServer(packet)
+						}
+					}
+					states[key.name] = key.isDown()
+				}
 			}
 		}
 	}

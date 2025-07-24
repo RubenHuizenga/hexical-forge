@@ -10,8 +10,8 @@ import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.xplat.IXplatAbstractions
 import miyucomics.hexical.interfaces.GenieLamp
 import miyucomics.hexical.registry.HexicalAdvancements
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
 import kotlin.math.min
 
 class OpRechargeLamp : SpellAction {
@@ -33,8 +33,8 @@ class OpRechargeLamp : SpellAction {
 			val hexHolder = IXplatAbstractions.INSTANCE.findHexHolder(stack)!!
 			hexHolder.writeHex(hexHolder.getHex(env.world) ?: listOf(), null, IXplatAbstractions.INSTANCE.findMediaHolder(stack)!!.media + battery)
 
-			if (env.castingEntity is ServerPlayerEntity)
-				HexicalAdvancements.RELOAD_LAMP.trigger(env.castingEntity as ServerPlayerEntity)
+			if (env.castingEntity is ServerPlayer)
+				HexicalAdvancements.RELOAD_LAMP.trigger(env.castingEntity as ServerPlayer)
 		}
 	}
 }

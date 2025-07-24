@@ -3,18 +3,18 @@ package miyucomics.hexical.entities.specklikes
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import at.petrak.hexcasting.api.utils.putCompound
 import miyucomics.hexical.interfaces.Specklike
-import net.minecraft.entity.Entity
-import net.minecraft.entity.EntityDimensions
-import net.minecraft.entity.EntityPose
-import net.minecraft.entity.EntityType
-import net.minecraft.entity.data.DataTracker
-import net.minecraft.entity.data.TrackedData
-import net.minecraft.entity.data.TrackedDataHandlerRegistry
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
-import net.minecraft.world.World
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.EntityDimensions
+import net.minecraft.world.entity.Pose
+import net.minecraft.world.entity.EntityType
+import net.minecraft.network.syncher.SynchedEntityData
+import net.minecraft.network.syncher.EntityDataAccessor
+import net.minecraft.network.syncher.EntityDataSerializers
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket
+import net.minecraft.world.level.Level
 
-abstract class BaseSpecklike(entityType: EntityType<out BaseSpecklike>, world: World) : Entity(entityType, world), Specklike {
+abstract class BaseSpecklike(entityType: EntityType<out BaseSpecklike>, world: Level) : Entity(entityType, world), Specklike {
 	private var lifespan = -1
 
 	var clientPigment: FrozenPigment = FrozenPigment.DEFAULT.get()
@@ -32,19 +32,19 @@ abstract class BaseSpecklike(entityType: EntityType<out BaseSpecklike>, world: W
 		super.tick()
 	}
 
-	override fun readCustomDataFromNbt(nbt: NbtCompound) {
-		dataTracker.set(pigmentDataTracker, nbt.getCompound("pigment"))
-		dataTracker.set(rollDataTracker, nbt.getFloat("roll"))
-		dataTracker.set(sizeDataTracker, nbt.getFloat("size"))
-		dataTracker.set(thicknessDataTracker, nbt.getFloat("thickness"))
+	override fun readAdditionalSaveData(nbt: CompoundTag) {
+		entityData.set(pigmentDataTracker, nbt.getCompound("pigment"))
+		entityData.set(rollDataTracker, nbt.getFloat("roll"))
+		entityData.set(sizeDataTracker, nbt.getFloat("size"))
+		entityData.set(thicknessDataTracker, nbt.getFloat("thickness"))
 		this.lifespan = nbt.getInt("lifespan")
 	}
 
-	override fun writeCustomDataToNbt(nbt: NbtCompound) {
-		nbt.putCompound("pigment", dataTracker.get(pigmentDataTracker))
-		nbt.putFloat("roll", dataTracker.get(rollDataTracker))
-		nbt.putFloat("size", dataTracker.get(sizeDataTracker))
-		nbt.putFloat("thickness", dataTracker.get(thicknessDataTracker))
+	override fun addAdditionalSaveData(nbt: CompoundTag) {
+		nbt.putCompound("pigment", entityData.get(pigmentDataTracker))
+		nbt.putFloat("roll", entityData.get(rollDataTracker))
+		nbt.putFloat("size", entityData.get(sizeDataTracker))
+		nbt.putFloat("thickness", entityData.get(thicknessDataTracker))
 		nbt.putInt("lifespan", lifespan)
 	}
 
@@ -52,37 +52,37 @@ abstract class BaseSpecklike(entityType: EntityType<out BaseSpecklike>, world: W
 		this.lifespan = lifespan
 	}
 
-	override fun setSize(size: Float) = dataTracker.set(sizeDataTracker, size)
-	override fun setRoll(rotation: Float) = dataTracker.set(rollDataTracker, rotation)
-	override fun setThickness(thickness: Float) = dataTracker.set(thicknessDataTracker, thickness)
-	override fun setPigment(pigment: FrozenPigment) = dataTracker.set(pigmentDataTracker, pigment.serializeToNBT())
-	override fun getEyeHeight(pose: EntityPose, dimensions: EntityDimensions) = 0.25f
-	override fun createSpawnPacket() = EntitySpawnS2CPacket(this)
+	override fun setSize(size: Float) = entityData.set(sizeDataTracker, size)
+	override fun setRoll(rotation: Float) = entityData.set(rollDataTracker, rotation)
+	override fun setThickness(thickness: Float) = entityData.set(thicknessDataTracker, thickness)
+	override fun setPigment(pigment: FrozenPigment) = entityData.set(pigmentDataTracker, pigment.serializeToNBT())
+	override fun getEyeHeight(pose: Pose, dimensions: EntityDimensions) = 0.25f
+	override fun getAddEntityPacket() = ClientboundAddEntityPacket(this)
 
-	override fun initDataTracker() {
-		dataTracker.startTracking(stateDataTracker, NbtCompound())
-		dataTracker.startTracking(pigmentDataTracker, NbtCompound())
-		dataTracker.startTracking(rollDataTracker, 0f)
-		dataTracker.startTracking(sizeDataTracker, 1f)
-		dataTracker.startTracking(thicknessDataTracker, 1f)
+	override fun defineSynchedData() {
+		entityData.define(stateDataTracker, CompoundTag())
+		entityData.define(pigmentDataTracker, CompoundTag())
+		entityData.define(rollDataTracker, 0f)
+		entityData.define(sizeDataTracker, 1f)
+		entityData.define(thicknessDataTracker, 1f)
 	}
 
-	override fun onTrackedDataSet(data: TrackedData<*>) {
+	override fun onSyncedDataUpdated(data: EntityDataAccessor<*>) {
 		when (data) {
 			stateDataTracker -> processState()
-			pigmentDataTracker -> this.clientPigment = FrozenPigment.fromNBT(dataTracker.get(pigmentDataTracker))
-			sizeDataTracker -> this.clientSize = dataTracker.get(sizeDataTracker)
-			rollDataTracker -> this.clientRoll = dataTracker.get(rollDataTracker)
-			thicknessDataTracker -> this.clientThickness = dataTracker.get(thicknessDataTracker)
+			pigmentDataTracker -> this.clientPigment = FrozenPigment.fromNBT(entityData.get(pigmentDataTracker))
+			sizeDataTracker -> this.clientSize = entityData.get(sizeDataTracker)
+			rollDataTracker -> this.clientRoll = entityData.get(rollDataTracker)
+			thicknessDataTracker -> this.clientThickness = entityData.get(thicknessDataTracker)
 			else -> {}
 		}
 	}
 
 	companion object {
-		val stateDataTracker: TrackedData<NbtCompound> = DataTracker.registerData(BaseSpecklike::class.java, TrackedDataHandlerRegistry.NBT_COMPOUND)
-		private val pigmentDataTracker: TrackedData<NbtCompound> = DataTracker.registerData(BaseSpecklike::class.java, TrackedDataHandlerRegistry.NBT_COMPOUND)
-		private val sizeDataTracker: TrackedData<Float> = DataTracker.registerData(BaseSpecklike::class.java, TrackedDataHandlerRegistry.FLOAT)
-		private val thicknessDataTracker: TrackedData<Float> = DataTracker.registerData(BaseSpecklike::class.java, TrackedDataHandlerRegistry.FLOAT)
-		private val rollDataTracker: TrackedData<Float> = DataTracker.registerData(BaseSpecklike::class.java, TrackedDataHandlerRegistry.FLOAT)
+		val stateDataTracker: EntityDataAccessor<CompoundTag> = SynchedEntityData.defineId(BaseSpecklike::class.java, EntityDataSerializers.COMPOUND_TAG)
+		private val pigmentDataTracker: EntityDataAccessor<CompoundTag> = SynchedEntityData.defineId(BaseSpecklike::class.java, EntityDataSerializers.COMPOUND_TAG)
+		private val sizeDataTracker: EntityDataAccessor<Float> = SynchedEntityData.defineId(BaseSpecklike::class.java, EntityDataSerializers.FLOAT)
+		private val thicknessDataTracker: EntityDataAccessor<Float> = SynchedEntityData.defineId(BaseSpecklike::class.java, EntityDataSerializers.FLOAT)
+		private val rollDataTracker: EntityDataAccessor<Float> = SynchedEntityData.defineId(BaseSpecklike::class.java, EntityDataSerializers.FLOAT)
 	}
 }

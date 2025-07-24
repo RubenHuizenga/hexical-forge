@@ -7,7 +7,7 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadEntity
 import miyucomics.hexical.casting.iotas.getPigment
 import miyucomics.hexical.interfaces.Specklike
-import net.minecraft.command.argument.EntityAnchorArgumentType
+import net.minecraft.commands.arguments.EntityAnchorArgument
 
 class OpSpecklikeProperty(private val mode: Int) : ConstMediaAction {
 	override val argc = 2
@@ -19,9 +19,9 @@ class OpSpecklikeProperty(private val mode: Int) : ConstMediaAction {
 			0 -> {
 				val position = args.getVec3(1, argc)
 				env.assertVecInRange(position)
-				specklike.setPosition(position.subtract(0.0, specklike.standingEyeHeight.toDouble(), 0.0))
+				specklike.setPos(position.subtract(0.0, specklike.eyeHeight.toDouble(), 0.0))
 			}
-			1 -> specklike.lookAt(EntityAnchorArgumentType.EntityAnchor.FEET, specklike.pos.add(args.getVec3(1, argc)))
+			1 -> specklike.lookAt(EntityAnchorArgument.Anchor.FEET, specklike.position().add(args.getVec3(1, argc)))
 			2 -> (specklike as Specklike).setRoll(args.getDoubleBetween(1, 0.0, 1.0, argc).toFloat() * 360)
 			3 -> (specklike as Specklike).setSize(args.getPositiveDoubleUnderInclusive(1, 10.0, argc).toFloat())
 			4 -> (specklike as Specklike).setThickness(args.getPositiveDoubleUnderInclusive(1, 10.0, argc).toFloat())

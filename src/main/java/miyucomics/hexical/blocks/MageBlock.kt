@@ -2,43 +2,46 @@ package miyucomics.hexical.blocks
 
 import at.petrak.hexcasting.common.blocks.BlockConjured
 import miyucomics.hexical.registry.HexicalBlocks
-import net.minecraft.block.BlockState
-import net.minecraft.block.Blocks
-import net.minecraft.block.MapColor
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.block.entity.BlockEntityTicker
-import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.entity.Entity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.BlockItem
-import net.minecraft.item.ItemPlacementContext
-import net.minecraft.sound.BlockSoundGroup
-import net.minecraft.sound.SoundCategory
-import net.minecraft.sound.SoundEvents
-import net.minecraft.util.ActionResult
-import net.minecraft.util.Hand
-import net.minecraft.util.hit.BlockHitResult
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.world.BlockView
-import net.minecraft.world.World
-import net.minecraft.world.event.GameEvent
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.*
+import net.minecraft.world.level.block.*
+import net.minecraft.world.level.block.*
+import net.minecraft.world.level.block.*
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.BlockItem
+import net.minecraft.world.item.context.BlockPlaceContext
+import net.minecraft.world.level.block.SoundType
+import net.minecraft.sounds.SoundSource
+import net.minecraft.sounds.SoundEvents
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.phys.BlockHitResult
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.world.level.BlockGetter
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.gameevent.GameEvent
+import net.minecraft.world.level.material.MapColor
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.entity.BlockEntityTicker
+import net.minecraft.world.level.block.entity.BlockEntityType
 
 class MageBlock : BlockConjured(
-	Settings
-		.create()
-		.nonOpaque()
-		.dropsNothing()
-		.breakInstantly()
-		.luminance { _ -> 2 }
-		.mapColor(MapColor.CLEAR)
-		.suffocates { _, _, _ -> false }
-		.blockVision { _, _, _ -> false }
-		.allowsSpawning { _, _, _, _ -> false }
-		.sounds(BlockSoundGroup.AMETHYST_CLUSTER)
+	Properties.of()
+		.noOcclusion()
+		.noLootTable()
+		.instabreak()
+		.lightLevel { _ -> 2 }
+		.mapColor(MapColor.NONE)
+		.isSuffocating { _, _, _ -> false }
+		.isViewBlocking { _, _, _ -> false }
+		.isValidSpawn { _, _, _, _ -> false }
+		.sound(SoundType.AMETHYST_CLUSTER)
 ) {
-	override fun emitsRedstonePower(state: BlockState) = true
-	override fun getWeakRedstonePower(state: BlockState, world: BlockView, pos: BlockPos, direction: Direction): Int {
+	override fun isSignalSource(state: BlockState) = true
+	override fun getSignal(state: BlockState, world: BlockGetter, pos: BlockPos, direction: Direction): Int {
 		val tile = world.getBlockEntity(pos)
 		if (tile !is MageBlockEntity)
 			return 0
@@ -47,69 +50,69 @@ class MageBlock : BlockConjured(
 		return 0
 	}
 
-	override fun onLandedUpon(world: World, state: BlockState, pos: BlockPos, entity: Entity, fallDistance: Float) {
+	override fun fallOn(world: Level, state: BlockState, pos: BlockPos, entity: Entity, fallDistance: Float) {
 		val tile = world.getBlockEntity(pos) as MageBlockEntity
 		if (tile.properties["bouncy"]!!)
-			entity.handleFallDamage(fallDistance, 0.0f, world.damageSources.fall())
+			entity.causeFallDamage(fallDistance, 0.0f, world.damageSources().fall())
 		else
-			super.onLandedUpon(world, state, pos, entity, fallDistance)
+			super.fallOn(world, state, pos, entity, fallDistance)
 	}
 
-	override fun onEntityLand(world: BlockView, entity: Entity) {
-		val tile = world.getBlockEntity(entity.blockPos.add(0, -1, 0))
+	override fun updateEntityAfterFallOn(world: BlockGetter, entity: Entity) {
+		val tile = world.getBlockEntity(entity.blockPosition().below())
 		if (tile !is MageBlockEntity)
 			return
 		if (tile.properties["bouncy"]!!) {
-			val velocity = entity.velocity
+			val velocity = entity.deltaMovement
 			if (velocity.y < 0) {
-				entity.setVelocity(velocity.x, -velocity.y, velocity.z)
+				entity.deltaMovement = velocity.with(Direction.Axis.Y, -velocity.y)
 				entity.fallDistance = 0f
 			}
 		} else
-			super.onEntityLand(world, entity)
+			super.updateEntityAfterFallOn(world, entity)
 	}
 
-	override fun onUse(state: BlockState, world: World, pos: BlockPos, player: PlayerEntity, hand: Hand, hit: BlockHitResult): ActionResult {
+	override fun use(state: BlockState, world: Level, pos: BlockPos, player: Player, hand: InteractionHand, hit: BlockHitResult): InteractionResult {
 		val tile = world.getBlockEntity(pos) as MageBlockEntity
 		if (!tile.properties["replaceable"]!!)
-			return ActionResult.PASS
-		val stack = player.getStackInHand(hand)
+			return InteractionResult.PASS
+		val stack = player.getItemInHand(hand)
 		val item = stack.item
 		if (item !is BlockItem)
-			return ActionResult.PASS
+			return InteractionResult.PASS
 		if (!player.isCreative)
-			stack.decrement(1)
-		world.playSound(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble(), SoundEvents.BLOCK_AMETHYST_BLOCK_BREAK, SoundCategory.BLOCKS, 1f, 1f, true)
-		world.setBlockState(pos, item.block.getPlacementState(ItemPlacementContext(player, hand, stack, hit)))
-		return ActionResult.SUCCESS
+			stack.shrink(1)
+		world.playLocalSound(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble(), SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.BLOCKS, 1f, 1f, true)
+		world.setBlockAndUpdate(pos, item.block.getStateForPlacement(BlockPlaceContext(world, player, hand, stack, hit))!!)
+		return InteractionResult.SUCCESS
 	}
 
-	override fun onBreak(world: World, position: BlockPos, state: BlockState, player: PlayerEntity?) {
+	override fun playerWillDestroy(world: Level, position: BlockPos, state: BlockState, player: Player?) {
 		val tile = world.getBlockEntity(position) as MageBlockEntity
-		world.playSound(position.x.toDouble(), position.y.toDouble(), position.z.toDouble(), SoundEvents.BLOCK_AMETHYST_BLOCK_BREAK, SoundCategory.BLOCKS, 1f, 1f, true)
-		world.emitGameEvent(GameEvent.BLOCK_DESTROY, position, GameEvent.Emitter.of(player, state))
-		world.setBlockState(position, Blocks.AIR.defaultState)
+		world.playLocalSound(position.x.toDouble(), position.y.toDouble(), position.z.toDouble(), SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.BLOCKS, 1f, 1f, true)
+		world.gameEvent(player, GameEvent.BLOCK_DESTROY, position)
+		world.setBlockAndUpdate(position, Blocks.AIR.defaultBlockState())
 		world.removeBlockEntity(position)
 		if (tile.properties["volatile"]!!) {
 			for (offset in Direction.stream()) {
-				val positionToTest = position.add(offset.vector)
+				val positionToTest = position.relative(offset)
 				val otherState = world.getBlockState(positionToTest)
 				val block = otherState.block
 				if (block == HexicalBlocks.MAGE_BLOCK)
-					block.onBreak(world, positionToTest, otherState, player)
+					block.playerWillDestroy(world, positionToTest, otherState, player)
 			}
 		}
 	}
 
-	override fun createBlockEntity(pos: BlockPos, state: BlockState) = MageBlockEntity(pos, state)
-	override fun <T : BlockEntity> getTicker(pworld: World, pstate: BlockState, type: BlockEntityType<T>): BlockEntityTicker<T> = BlockEntityTicker { world, position, state, blockEntity -> tick(world, position, state, blockEntity as MageBlockEntity) }
+	override fun newBlockEntity(pos: BlockPos, state: BlockState) = MageBlockEntity(pos, state)
+	override fun <T : BlockEntity> getTicker(pworld: Level, pstate: BlockState, type: BlockEntityType<T>): BlockEntityTicker<T> = BlockEntityTicker { world, position, state, blockEntity -> tick(world, position, state, blockEntity as MageBlockEntity) }
 
 	companion object {
-		fun tick(world: World, position: BlockPos, state: BlockState, blockEntity: MageBlockEntity) {
+		fun tick(world: Level, position: BlockPos, state: BlockState, blockEntity: MageBlockEntity) {
 			if (blockEntity.properties["ephemeral"]!!) {
 				blockEntity.lifespan--
 				if (blockEntity.lifespan <= 0)
-					HexicalBlocks.MAGE_BLOCK.onBreak(world, position, state, null)
+					HexicalBlocks.MAGE_BLOCK.get().playerWillDestroy(world, position, state, null)	
 			}
 		}
 	}

@@ -6,13 +6,13 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.NullIota
 import miyucomics.hexical.data.KeybindData
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.level.ServerPlayer
 
 class OpGetKeybind(private val key: String) : ConstMediaAction {
 	override val argc = 0
 	override fun execute(args: List<Iota>, env: CastingEnvironment): List<Iota> {
 		val caster = env.castingEntity
-		if (caster !is ServerPlayerEntity)
+		if (caster !is ServerPlayer)
 			return listOf(NullIota())
 		if (!KeybindData.active.containsKey(caster.uuid))
 			return (-1).asActionResult

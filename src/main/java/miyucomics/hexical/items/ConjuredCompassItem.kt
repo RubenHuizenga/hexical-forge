@@ -1,29 +1,30 @@
 package miyucomics.hexical.items
 
 import miyucomics.hexical.registry.HexicalItems
-import net.minecraft.client.item.CompassAnglePredicateProvider
-import net.minecraft.client.item.ModelPredicateProviderRegistry
-import net.minecraft.client.world.ClientWorld
-import net.minecraft.entity.Entity
-import net.minecraft.item.FoodComponent
-import net.minecraft.item.Item
-import net.minecraft.item.ItemStack
-import net.minecraft.util.Identifier
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.GlobalPos
+import net.minecraft.client.renderer.item.CompassItemPropertyFunction
+import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.client.renderer.item.ItemProperties
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.food.FoodProperties
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.core.BlockPos
+import net.minecraft.core.GlobalPos
+import com.ibm.icu.impl.number.Properties
 
-class ConjuredCompassItem : Item(Settings().maxCount(16).food(FoodComponent.Builder().hunger(2).alwaysEdible().snack().build())) {
-	override fun getMaxUseTime(stack: ItemStack) = 40
+class ConjuredCompassItem : Item(Properties().stacksTo(16).food(FoodProperties.Builder().nutrition(2).alwaysEat().fast().build())) {
+	override fun getUseDuration(stack: ItemStack) = 40
 
 	companion object {
 		fun registerModelPredicate() {
-			ModelPredicateProviderRegistry.register(HexicalItems.CONJURED_COMPASS_ITEM, Identifier("angle"), CompassAnglePredicateProvider(
-				CompassAnglePredicateProvider.CompassTarget { world: ClientWorld, stack: ItemStack, player: Entity ->
-					val nbt = stack.nbt ?: return@CompassTarget null
-					if (nbt.getString("dimension") != world.dimensionKey.value.toString())
+			ItemProperties.register(HexicalItems.CONJURED_COMPASS_ITEM.get(), ResourceLocation("angle"), CompassItemPropertyFunction(
+				CompassItemPropertyFunction.CompassTarget { world: ClientLevel, stack: ItemStack, player: Entity ->
+					val nbt = stack.tag ?: return@CompassTarget null
+					if (nbt.getString("dimension") != world.dimensionTypeId().location().toString())
 						return@CompassTarget null
-					return@CompassTarget GlobalPos.create(
-						player.world.registryKey,
+					return@CompassTarget GlobalPos.of(
+						player.level().dimension(),
 						BlockPos(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z"))
 					)
 				}

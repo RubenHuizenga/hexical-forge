@@ -8,7 +8,7 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapBadOffhandItem
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.common.items.magic.ItemPackagedHex
 import miyucomics.hexical.casting.mishaps.IllegalJailbreakMishap
-import net.minecraft.item.ItemStack
+import net.minecraft.world.item.ItemStack
 
 class OpCrackDevice : SpellAction {
 	override val argc = 0
@@ -24,7 +24,7 @@ class OpCrackDevice : SpellAction {
 
 	private data class Spell(val stack: ItemStack) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			stack.orCreateNbt.putBoolean("cracked", true)
+			stack.orCreateTag.putBoolean("cracked", true)
 		}
 	}
 }

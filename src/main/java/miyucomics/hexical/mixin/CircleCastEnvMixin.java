@@ -6,10 +6,10 @@ import at.petrak.hexcasting.api.casting.eval.env.CircleCastEnv;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import miyucomics.hexical.blocks.PedestalBlockEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,18 +26,18 @@ public abstract class CircleCastEnvMixin {
 	public List<CastingEnvironment.HeldItemInfo> addHands(Operation<List<CastingEnvironment.HeldItemInfo>> original) {
 		if (circleState().currentImage.getUserData().contains("impetusHand")) {
 			PedestalBlockEntity pedestal = getPedestal();
-			return List.of(new CastingEnvironment.HeldItemInfo(pedestal.getStack(0), Hand.OFF_HAND));
+			return List.of(new CastingEnvironment.HeldItemInfo(pedestal.getItem(0), InteractionHand.OFF_HAND));
 		}
 		return original.call();
 	}
 
 	@WrapMethod(method = "replaceItem")
-	public boolean addHands(Predicate<ItemStack> stackOk, ItemStack replaceWith, @Nullable Hand hand, Operation<Boolean> original) {
+	public boolean addHands(Predicate<ItemStack> stackOk, ItemStack replaceWith, @Nullable InteractionHand hand, Operation<Boolean> original) {
 		if (circleState().currentImage.getUserData().contains("impetusHand")) {
 			PedestalBlockEntity pedestal = getPedestal();
-			ItemStack heldStack = pedestal.getStack(0);
+			ItemStack heldStack = pedestal.getItem(0);
 			if (stackOk.test(heldStack)) {
-				pedestal.setStack(0, replaceWith);
+				pedestal.setItem(0, replaceWith);
 				return true;
 			}
 			return false;
@@ -48,7 +48,7 @@ public abstract class CircleCastEnvMixin {
 	@Unique
 	private PedestalBlockEntity getPedestal() {
 		int[] position = circleState().currentImage.getUserData().getIntArray("impetusHand");
-		ServerWorld world = ((CastingEnvironment) (Object) this).getWorld();
+		ServerLevel world = ((CastingEnvironment) (Object) this).getWorld();
 		PedestalBlockEntity pedestal = (PedestalBlockEntity) world.getBlockEntity(new BlockPos(position[0], position[1], position[2]));
 		assert pedestal != null;
 		return pedestal;

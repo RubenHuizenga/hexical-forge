@@ -12,9 +12,10 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.registry.HexicalNetworking
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
-import net.minecraft.util.math.Vec3d
+import miyucomics.hexical.registry.HexicalParticles
+import net.minecraft.world.phys.Vec3
+import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket
+import net.minecraft.server.level.ServerPlayer
 
 class OpConfetti : SpellAction {
 	override val argc = 2
@@ -25,7 +26,7 @@ class OpConfetti : SpellAction {
 		when (args[1]) {
 			is DoubleIota -> {
 				val speed = args.getPositiveDoubleUnderInclusive(1, 2.0, argc) / 2
-				return SpellAction.Result(Spell(position, Vec3d.ZERO, speed), MediaConstants.DUST_UNIT / 2, listOf())
+				return SpellAction.Result(Spell(position, Vec3.ZERO, speed), MediaConstants.DUST_UNIT / 2, listOf())
 			}
 			is Vec3Iota -> {
 				val velocity = args.getVec3(1, argc)
@@ -38,18 +39,9 @@ class OpConfetti : SpellAction {
 		}
 	}
 
-	private data class Spell(val pos: Vec3d, val dir: Vec3d, val speed: Double) : RenderedSpell {
+	private data class Spell(val pos: Vec3, val dir: Vec3, val speed: Double) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val packet = PacketByteBufs.create()
-			packet.writeLong(HexicalMain.RANDOM.nextLong())
-			packet.writeDouble(pos.x)
-			packet.writeDouble(pos.y)
-			packet.writeDouble(pos.z)
-			packet.writeDouble(dir.x)
-			packet.writeDouble(dir.y)
-			packet.writeDouble(dir.z)
-			packet.writeDouble(speed)
-			env.world.players.forEach { player -> env.world.sendToPlayerIfNearby(player, false, pos.x, pos.y, pos.z, ServerPlayNetworking.createS2CPacket(HexicalNetworking.CONFETTI_CHANNEL, packet)) }
+			env.world.players().forEach { player -> HexicalNetworking.sendToPlayer(player, HexicalNetworking.ConfettiPacket(pos, dir, speed, HexicalMain.RANDOM.nextLong())) }
 		}
 	}
 }

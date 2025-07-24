@@ -1,9 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	id "fabric-loom" version "1.6-SNAPSHOT"
+	id "net.minecraftforge.gradle" version "6.0.+"
+	id 'org.spongepowered.mixin' version '0.7.+'
 	id "maven-publish"
-	id "org.jetbrains.kotlin.jvm" version "1.8.0"
+    id "org.jetbrains.kotlin.jvm" version "1.9.22"
 }
 
 version = mod_version
@@ -13,8 +14,56 @@ base {
 	archivesName = archives_base_name
 }
 
-loom {
-	accessWidenerPath = file("src/main/resources/hexical.accesswidener")
+sourceSets {
+    main {
+        resources {
+            srcDirs = [
+                'src/main/resources',
+                'src/generated/resources'
+            ]
+       }
+    }
+}
+
+minecraft {
+	mappings channel: "official", version: minecraft_version
+	accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+	runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                mymod {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                mymod {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            args '--mod', 'mymod', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            mods {
+                mymod {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
 }
 
 repositories {
@@ -26,43 +75,65 @@ repositories {
     maven { url = "https://maven.terraformersmc.com/releases" }
     maven { url = "https://maven.ladysnake.org/releases" }
     maven { url = "https://mvn.devos.one/snapshots/" }
-	mavenLocal()
+	maven { url = "https://thedarkcolour.github.io/KotlinForForge/"}
+
+	flatDir {
+		dir 'libs'
+ 	}
 }
 
 dependencies {
-	minecraft "com.mojang:minecraft:$minecraft_version"
-	mappings "net.fabricmc:yarn:$yarn_mappings"
-	modImplementation "net.fabricmc:fabric-loader:$loader_version"
-	modImplementation "net.fabricmc.fabric-api:fabric-api:$fabric_api_version"
-	modImplementation "net.fabricmc:fabric-language-kotlin:$fabric_kotlin_version"
+	minecraft "net.minecraftforge:forge:1.20.1-47.1.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-	include modImplementation("dev.kosmx.player-anim:player-animation-lib-fabric:$player_animator_version")
-	modImplementation "dev.onyxstudios.cardinal-components-api:cardinal-components-api:$cardinal_components_version"
-	modImplementation "vazkii.patchouli:Patchouli:$minecraft_version-$patchouli_version-FABRIC"
-	modImplementation "miyucomics:hexpose:$hexpose_version"
-	modImplementation("at.petra-k.hexcasting:hexcasting-fabric-$minecraft_version:$hexcasting_version") {
-		exclude module: "phosphor"
-        exclude module: "lithium"
-		exclude module: "emi"
-	}
+	annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-	modLocalRuntime "me.shedaniel.cloth:cloth-config-fabric:$cloth_config_version"
-	modLocalRuntime "com.samsthenerd.inline:inline-fabric:$minecraft_version-$inline_version"
-	modLocalRuntime "at.petra-k.paucal:paucal-fabric-$minecraft_version:$paucal_version"
-	modLocalRuntime files("$rootProject.rootDir/libs/serialization-hooks-0.4.99999.jar")
+    implementation "thedarkcolour:kotlinforforge:4.11.0"
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.4.1")) {
+        jarJar.ranged(it, "[0.4.1,)")
+    }
+
+	implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}"
+	
+    compileOnly fg.deobf("vazkii.patchouli:Patchouli:${minecraft_version}-${patchouli_version}-FORGE")
+    runtimeOnly fg.deobf("vazkii.patchouli:Patchouli:${minecraft_version}-${patchouli_version}-FORGE")
+
+	implementation "miyucomics:hexpose-forge:$hexpose_version"
+	
+    implementation fg.deobf("at.petra-k.hexcasting:hexcasting-forge-${minecraft_version}:${hexcasting_version}")
+    
+    // Inline
+    implementation fg.deobf("com.samsthenerd.inline:inline-forge:${minecraft_version}-1.0.1")
+
+    // Paucal
+    implementation fg.deobf("at.petra-k.paucal:paucal-forge-${minecraft_version}:${paucal_version}")
+
+    // Cloth config
+    implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.106")
+
+    // Kotlin
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.9.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0'
+
+	runtimeOnly files("$rootProject.rootDir/libs/serialization-hooks-0.4.99999.jar")
+}
+
+mixin {
+    add sourceSets.main, "META-INF/hexical.refmap.json"
+    
+    config "hexical.mixins.json"
 }
 
 processResources {
 	inputs.property "version", version
-	filesMatching("fabric.mod.json") {
+	filesMatching("META-INF/mods.toml") {
 		expand "version": version
 	}
-}
-
-fabricApi {
-	configureDataGeneration() {
-		modId = "hexical"
-	}
+    
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.withType(JavaCompile).configureEach {

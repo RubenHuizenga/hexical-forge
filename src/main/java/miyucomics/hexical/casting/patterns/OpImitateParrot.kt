@@ -8,11 +8,12 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexpose.iotas.getIdentifier
-import net.minecraft.entity.EntityType
-import net.minecraft.entity.passive.ParrotEntity
-import net.minecraft.registry.Registries
-import net.minecraft.sound.SoundCategory
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.animal.Parrot
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraft.sounds.SoundSource
+import net.minecraft.world.phys.Vec3
+import net.minecraft.resources.ResourceLocation
 
 class OpImitateParrot : SpellAction {
 	override val argc = 2
@@ -20,15 +21,15 @@ class OpImitateParrot : SpellAction {
 		val pos = args.getVec3(0, argc)
 		env.assertVecInRange(pos)
 		val id = args.getIdentifier(1, argc)
-		if (!Registries.ENTITY_TYPE.containsId(id))
+		if (!ForgeRegistries.ENTITY_TYPES.containsKey(id))
 			throw MishapInvalidIota.of(args[0], 0, "entity_id")
-		return SpellAction.Result(Spell(pos, Registries.ENTITY_TYPE.get(id)), MediaConstants.DUST_UNIT / 2, listOf())
+		return SpellAction.Result(Spell(pos, ForgeRegistries.ENTITY_TYPES.getValue(id)!!), MediaConstants.DUST_UNIT / 2, listOf())
 	}
 
-	private data class Spell(val pos: Vec3d, val type: EntityType<*>) : RenderedSpell {
+	private data class Spell(val pos: Vec3, val type: EntityType<*>) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val sound = ParrotEntity.MOB_SOUNDS[type] ?: return
-			env.world.playSound(null, pos.x, pos.y, pos.z, sound, SoundCategory.MASTER, 1.0f, ParrotEntity.getSoundPitch(env.world.random))
+			val sound = ForgeRegistries.SOUND_EVENTS.getValue(ResourceLocation("entity.${type.toShortString()}.ambient")) ?: return
+			env.world.playSound(null, pos.x, pos.y, pos.z, sound, SoundSource.MASTER, 1.0f, Parrot.getPitch(env.world.random))
 		}
 	}
 }

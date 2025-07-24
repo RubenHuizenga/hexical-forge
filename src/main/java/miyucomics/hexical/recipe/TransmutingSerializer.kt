@@ -2,18 +2,18 @@ package miyucomics.hexical.recipe
 
 import com.google.gson.*
 import com.mojang.serialization.JsonOps
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
 import net.minecraft.nbt.NbtOps
-import net.minecraft.network.PacketByteBuf
-import net.minecraft.recipe.Ingredient
-import net.minecraft.recipe.RecipeSerializer
-import net.minecraft.registry.Registries
-import net.minecraft.util.Identifier
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.world.item.crafting.Ingredient
+import net.minecraft.world.item.crafting.RecipeSerializer
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraft.resources.ResourceLocation
 
 class TransmutingSerializer : RecipeSerializer<TransmutingRecipe> {
-	override fun read(recipeId: Identifier, json: JsonObject): TransmutingRecipe {
+	override fun fromJson(recipeId: ResourceLocation, json: JsonObject): TransmutingRecipe {
 		val recipeJson: TransmutingFormat = Gson().fromJson(json, TransmutingFormat::class.java)
 		if (recipeJson.input == null)
 			throw JsonSyntaxException("Input is missing in recipe $recipeId")
@@ -28,22 +28,22 @@ class TransmutingSerializer : RecipeSerializer<TransmutingRecipe> {
 		return TransmutingRecipe(recipeId, Ingredient.fromJson(recipeJson.input), recipeJson.cost, outputs)
 	}
 
-	override fun write(buf: PacketByteBuf, recipe: TransmutingRecipe) {
-		recipe.input.write(buf)
+	override fun toNetwork(buf: FriendlyByteBuf, recipe: TransmutingRecipe) {
+		recipe.input.toNetwork(buf)
 		buf.writeLong(recipe.cost)
 		buf.writeInt(recipe.output.size)
 		for (item in recipe.output)
-			buf.writeItemStack(item)
+			buf.writeItem(item)
 	}
 
-	override fun read(id: Identifier, buf: PacketByteBuf): TransmutingRecipe {
-		val input = Ingredient.fromPacket(buf)
+	override fun fromNetwork(id: ResourceLocation, buf: FriendlyByteBuf): TransmutingRecipe {
+		val input = Ingredient.fromNetwork(buf)
 		val mediaCost = buf.readLong()
 
 		val outputs = mutableListOf<ItemStack>()
 		val length = buf.readInt()
 		for (i in 0 until length)
-			outputs.add(buf.readItemStack())
+			outputs.add(buf.readItem())
 
 		return TransmutingRecipe(id, input, mediaCost, outputs)
 	}
@@ -51,20 +51,20 @@ class TransmutingSerializer : RecipeSerializer<TransmutingRecipe> {
 	companion object {
 		val INSTANCE: TransmutingSerializer = TransmutingSerializer()
 
-		fun deriveSingleItem(thing: JsonElement, recipeId: Identifier): ItemStack {
+		fun deriveSingleItem(thing: JsonElement, recipeId: ResourceLocation): ItemStack {
 			return when (thing) {
 				is JsonObject -> deriveComplexItem(thing, recipeId)
-				is JsonPrimitive -> ItemStack(Registries.ITEM.getOrEmpty(Identifier(thing.asString)).orElseThrow { JsonSyntaxException("No such item $thing") })
+				is JsonPrimitive -> ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation(thing.asString)) ?: throw JsonSyntaxException("No such item $thing"))
 				else -> throw IllegalStateException("$thing is not a valid single item stack format.")
 			}
 		}
 
-		private fun deriveComplexItem(output: JsonObject, recipeId: Identifier): ItemStack {
+		private fun deriveComplexItem(output: JsonObject, recipeId: ResourceLocation): ItemStack {
 			var outputCount = 1
-			var outputNBT: NbtElement? = null
+			var outputNBT: Tag? = null
 
 			val outputItemID: String = output.get("item").asString
-			val outputItem = Registries.ITEM.getOrEmpty(Identifier(outputItemID)).orElseThrow { JsonSyntaxException("No such item $outputItemID") }
+			val outputItem = ForgeRegistries.ITEMS.getValue(ResourceLocation(outputItemID)) ?: throw JsonSyntaxException("No such item $outputItemID")
 
 			if (output.has("count"))
 				outputCount = output.get("count").asInt
@@ -73,8 +73,8 @@ class TransmutingSerializer : RecipeSerializer<TransmutingRecipe> {
 
 			val outputStack = ItemStack(outputItem, outputCount)
 			if (outputNBT != null) {
-				if (outputNBT is NbtCompound)
-					outputStack.nbt = outputNBT
+				if (outputNBT is CompoundTag)
+					outputStack.tag = outputNBT
 				else
 					throw IllegalStateException("Weird NBT: $outputItemID in recipe $recipeId")
 			}

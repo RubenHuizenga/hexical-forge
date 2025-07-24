@@ -9,8 +9,8 @@ import at.petrak.hexcasting.api.casting.iota.Iota;
 import com.llamalad7.mixinextras.sugar.Local;
 import miyucomics.hexical.data.LedgerData;
 import miyucomics.hexical.utils.InjectionHelper;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,7 +22,7 @@ import java.util.List;
 @Mixin(value = CastingVM.class, priority = 100, remap = false)
 public class CastingVMMixin {
 	@Inject(method = "queueExecuteAndWrapIota", at = @At("HEAD"), cancellable = true)
-	void expandGrimoire(Iota iota, ServerWorld world, CallbackInfoReturnable<ExecutionClientView> cir) {
+	void expandGrimoire(Iota iota, ServerLevel world, CallbackInfoReturnable<ExecutionClientView> cir) {
 		ExecutionClientView view = InjectionHelper.handleGrimoire((CastingVM) (Object) this, iota, world);
 		if (view != null)
 			cir.setReturnValue(view);
@@ -36,7 +36,7 @@ public class CastingVMMixin {
 			if (!(env instanceof PlayerBasedCastEnv))
 				return;
 			//noinspection DataFlowIssue
-			LedgerData.getLedger((ServerPlayerEntity) env.getCastingEntity()).saveStack(vm.getImage().getStack());
+			LedgerData.getLedger((ServerPlayer) env.getCastingEntity()).saveStack(vm.getImage().getStack());
 		}
 	}
 }

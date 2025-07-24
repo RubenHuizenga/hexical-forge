@@ -18,7 +18,7 @@ class OpWriteAkashicShelf : SpellAction {
 		val position = args.getBlockPos(0, argc)
 		env.assertPosInRange(position)
 		val block = env.world.getBlockState(position)
-		if (!block.isOf(HexBlocks.AKASHIC_BOOKSHELF))
+		if (!block.`is`(HexBlocks.AKASHIC_BOOKSHELF))
 			throw MishapBadBlock.of(position, "akashic_bookshelf")
 
 		val key = args.getPattern(1, argc)
@@ -31,7 +31,7 @@ class OpWriteAkashicShelf : SpellAction {
 		override fun cast(env: CastingEnvironment) {
 			shelf.clearIota()
 			shelf.setNewMapping(key, iota)
-			shelf.markDirty()
+			shelf.setChanged()
 		}
 	}
 }

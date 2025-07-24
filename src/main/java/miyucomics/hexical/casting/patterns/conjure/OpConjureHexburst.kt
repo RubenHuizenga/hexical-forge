@@ -11,9 +11,9 @@ import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.api.utils.putCompound
 import miyucomics.hexical.registry.HexicalItems
 import miyucomics.hexical.utils.CastingUtils
-import net.minecraft.entity.ItemEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.phys.Vec3
 
 class OpConjureHexburst : SpellAction {
 	override val argc = 2
@@ -25,11 +25,11 @@ class OpConjureHexburst : SpellAction {
 		return SpellAction.Result(Spell(position, iota), MediaConstants.DUST_UNIT, listOf(ParticleSpray.burst(position, 1.0)))
 	}
 
-	private data class Spell(val position: Vec3d, val iota: Iota) : RenderedSpell {
+	private data class Spell(val position: Vec3, val iota: Iota) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val stack = ItemStack(HexicalItems.HEXBURST_ITEM, 1)
-			stack.orCreateNbt.putCompound("iota", IotaType.serialize(iota))
-			env.world.spawnEntity(ItemEntity(env.world, position.x, position.y, position.z, stack))
+			val stack = ItemStack(HexicalItems.HEXBURST_ITEM.get(), 1)
+			stack.orCreateTag.putCompound("iota", IotaType.serialize(iota))
+			env.world.addFreshEntity(ItemEntity(env.world, position.x, position.y, position.z, stack))
 		}
 	}
 }

@@ -3,7 +3,7 @@ package miyucomics.hexical.utils
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.eval.env.PlayerBasedCastEnv
 import miyucomics.hexical.interfaces.PlayerEntityMinterface
-import net.minecraft.item.ItemStack
+import net.minecraft.world.item.ItemStack
 
 object WristpocketUtils {
 	fun getWristpocketStack(env: CastingEnvironment): ItemStack? {

@@ -12,9 +12,9 @@ import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.api.utils.putCompound
 import miyucomics.hexical.registry.HexicalItems
 import miyucomics.hexical.utils.CastingUtils
-import net.minecraft.entity.ItemEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.phys.Vec3
 
 class OpConjureHextito : SpellAction {
 	override val argc = 2
@@ -26,13 +26,13 @@ class OpConjureHextito : SpellAction {
 		return SpellAction.Result(Spell(position, args[1]), MediaConstants.DUST_UNIT * 2, listOf(ParticleSpray.burst(position, 1.0)))
 	}
 
-	private data class Spell(val position: Vec3d, val hex: Iota) : RenderedSpell {
+	private data class Spell(val position: Vec3, val hex: Iota) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val stack = ItemStack(HexicalItems.HEXTITO_ITEM, 1)
-			stack.orCreateNbt.putCompound("hex", IotaType.serialize(hex))
+			val stack = ItemStack(HexicalItems.HEXTITO_ITEM.get(), 1)
+			stack.orCreateTag.putCompound("hex", IotaType.serialize(hex))
 			val entity = ItemEntity(env.world, position.x, position.y, position.z, stack)
-			entity.setPickupDelay(1) // should be nearly imperceptible but allows for hextito quines
-			env.world.spawnEntity(entity)
+			entity.setPickUpDelay(1) // should be nearly imperceptible but allows for hextito quines
+			env.world.addFreshEntity(entity)
 		}
 	}
 }

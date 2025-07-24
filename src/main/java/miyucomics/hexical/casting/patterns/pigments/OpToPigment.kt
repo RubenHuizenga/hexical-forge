@@ -17,11 +17,12 @@ import miyucomics.hexical.casting.iotas.PigmentIota
 import miyucomics.hexical.casting.iotas.getTrueDye
 import miyucomics.hexpose.iotas.IdentifierIota
 import miyucomics.hexpose.iotas.getIdentifier
-import net.minecraft.entity.ItemEntity
-import net.minecraft.entity.LivingEntity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.registry.Registries
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraftforge.registries.ForgeRegistry
 
 class OpToPigment : ConstMediaAction {
 	override val argc = 1
@@ -34,11 +35,11 @@ class OpToPigment : ConstMediaAction {
 			is DyeIota -> FrozenPigment(ItemStack(HexItems.DYE_PIGMENTS[args.getTrueDye(0, argc)]), caster.uuid)
 			is EntityIota -> {
 				when (val entity = args.getEntity(0, argc)) {
-					is PlayerEntity -> IXplatAbstractions.INSTANCE.getPigment(entity)
+					is Player -> IXplatAbstractions.INSTANCE.getPigment(entity)
 					is ItemEntity -> {
 						val item = args.getItemEntity(0, argc)
 						env.assertEntityInRange(item)
-						val stack = item.stack
+						val stack = item.item
 						if (stack.item is PigmentItem)
 							FrozenPigment(stack, caster.uuid)
 						else
@@ -48,7 +49,7 @@ class OpToPigment : ConstMediaAction {
 				}
 			}
 			is IdentifierIota -> {
-				val item = Registries.ITEM.get(args.getIdentifier(0, argc))
+				val item = ForgeRegistries.ITEMS.getValue(args.getIdentifier(0, argc))
 				if (item is PigmentItem)
 					FrozenPigment(ItemStack(item), caster.uuid)
 				else

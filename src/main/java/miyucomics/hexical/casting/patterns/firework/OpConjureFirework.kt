@@ -7,14 +7,14 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.casting.iotas.DyeIota
-import net.minecraft.entity.projectile.FireworkRocketEntity
-import net.minecraft.item.FireworkRocketItem
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtList
-import net.minecraft.util.DyeColor
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.projectile.FireworkRocketEntity
+import net.minecraft.world.item.FireworkRocketItem
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.ListTag
+import net.minecraft.world.item.DyeColor
+import net.minecraft.world.phys.Vec3
 
 class OpConjureFirework : SpellAction {
 	override val argc = 8
@@ -50,32 +50,32 @@ class OpConjureFirework : SpellAction {
 		return SpellAction.Result(Spell(position, velocity, duration, type, trueColors, trueFades, flicker, trail), MediaConstants.SHARD_UNIT, listOf(ParticleSpray.burst(position, 1.0)))
 	}
 
-	private data class Spell(val position: Vec3d, val velocity: Vec3d, val duration: Int, val type: Int, val colors: List<Int>, val fades: List<Int>, val flicker: Boolean, val trail: Boolean) :
+	private data class Spell(val position: Vec3, val velocity: Vec3, val duration: Int, val type: Int, val colors: List<Int>, val fades: List<Int>, val flicker: Boolean, val trail: Boolean) :
 		RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val star = NbtCompound()
-			star.putInt(FireworkRocketItem.TYPE_KEY, type)
+			val star = CompoundTag()
+			star.putInt(FireworkRocketItem.TAG_EXPLOSION_TYPE, type)
 			if (flicker)
-				star.putByte(FireworkRocketItem.FLICKER_KEY, (1).toByte())
+				star.putByte(FireworkRocketItem.TAG_EXPLOSION_FLICKER, (1).toByte())
 			if (trail)
-				star.putByte(FireworkRocketItem.TRAIL_KEY, (1).toByte())
-			star.putIntArray(FireworkRocketItem.COLORS_KEY, colors)
+				star.putByte(FireworkRocketItem.TAG_EXPLOSION_TRAIL, (1).toByte())
+			star.putIntArray(FireworkRocketItem.TAG_EXPLOSION_COLORS, colors)
 			if (fades.isNotEmpty())
-				star.putIntArray(FireworkRocketItem.FADE_COLORS_KEY, fades)
+				star.putIntArray(FireworkRocketItem.TAG_EXPLOSION_FADECOLORS, fades)
 
-			val explosions = NbtList()
+			val explosions = ListTag()
 			explosions.add(star)
 
-			val main = NbtCompound()
-			main.put(FireworkRocketItem.EXPLOSIONS_KEY, explosions)
-			main.putByte(FireworkRocketItem.FLIGHT_KEY, duration.toByte())
+			val main = CompoundTag()
+			main.put(FireworkRocketItem.TAG_EXPLOSIONS, explosions)
+			main.putByte(FireworkRocketItem.TAG_FLIGHT, duration.toByte())
 
 			val stack = ItemStack(Items.FIREWORK_ROCKET)
-			stack.orCreateNbt.put(FireworkRocketItem.FIREWORKS_KEY, main)
+			stack.orCreateTag.put(FireworkRocketItem.TAG_FIREWORKS, main)
 
 			val firework = FireworkRocketEntity(env.world, stack, position.x, position.y, position.z, true)
-			firework.setVelocity(velocity.x, velocity.y, velocity.z)
-			env.world.spawnEntity(firework)
+			firework.deltaMovement = Vec3(velocity.x, velocity.y, velocity.z)
+			env.world.addFreshEntity(firework)
 		}
 	}
 }

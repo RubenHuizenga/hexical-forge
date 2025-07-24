@@ -18,15 +18,15 @@ import miyucomics.hexical.interfaces.PlayerEntityMinterface
 import miyucomics.hexical.registry.HexicalAdvancements
 import miyucomics.hexical.registry.HexicalSounds
 import miyucomics.hexical.utils.CastingUtils
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.sound.SoundCategory
-import net.minecraft.util.Hand
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.sounds.SoundSource
+import net.minecraft.world.InteractionHand
 
 class OpSetEvocation : SpellAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
-		if (env.castingEntity !is ServerPlayerEntity)
+		if (env.castingEntity !is ServerPlayer)
 			throw MishapBadCaster()
 		args.getList(0, argc)
 		CastingUtils.assertNoTruename(args[0], env)
@@ -41,17 +41,17 @@ class OpSetEvocation : SpellAction {
 
 	companion object {
 		@JvmStatic
-		fun evoke(player: ServerPlayerEntity) {
-			player.incrementStat(HexicalAdvancements.EVOCATION_STATISTIC)
+		fun evoke(player: ServerPlayer) {
+			player.awardStat(HexicalAdvancements.EVOCATION_STATISTIC)
 
 			EvokeState.duration[player.uuid] = HexicalMain.EVOKE_DURATION
 			val nbt = (player as PlayerEntityMinterface).getEvocation()
-			val hex = IotaType.deserialize(nbt, player.world as ServerWorld)
+			val hex = IotaType.deserialize(nbt, player.level() as ServerLevel)
 			if (hex is ListIota) {
-				val hand = if(!player.getStackInHand(Hand.MAIN_HAND).isEmpty && player.getStackInHand(Hand.OFF_HAND).isEmpty){ Hand.OFF_HAND } else { Hand.MAIN_HAND }
+				val hand = if(!player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty && player.getItemInHand(InteractionHand.OFF_HAND).isEmpty){ InteractionHand.OFF_HAND } else { InteractionHand.MAIN_HAND }
 				val vm = CastingVM(CastingImage(), EvocationCastEnv(player, hand))
-				vm.queueExecuteAndWrapIotas(hex.list.toList(), player.serverWorld)
-				player.world.playSound(null, player.x, player.y, player.z, HexicalSounds.EVOKING_CAST, SoundCategory.PLAYERS, 1f, 1f)
+				vm.queueExecuteAndWrapIotas(hex.list.toList(), player.serverLevel())
+				player.level().playSound(null, player.x, player.y, player.z, HexicalSounds.EVOKING_CAST.get(), SoundSource.PLAYERS, 1f, 1f)
 			}
 		}
 	}

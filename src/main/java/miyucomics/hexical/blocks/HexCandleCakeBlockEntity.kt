@@ -2,29 +2,30 @@ package miyucomics.hexical.blocks
 
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import miyucomics.hexical.registry.HexicalBlocks
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.*
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.block.entity.BlockEntity
 
-class HexCandleCakeBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(HexicalBlocks.HEX_CANDLE_CAKE_BLOCK_ENTITY, pos, state) {
+class HexCandleCakeBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(HexicalBlocks.HEX_CANDLE_CAKE_BLOCK_ENTITY.get(), pos, state) {
 	private var pigment: FrozenPigment = FrozenPigment.DEFAULT.get()
 
 	fun getPigment() = this.pigment
 	fun setPigment(pigment: FrozenPigment) {
 		this.pigment = pigment
-		markDirty()
+		setChanged()
 	}
 
-	override fun writeNbt(nbt: NbtCompound) {
+	override fun saveAdditional(nbt: CompoundTag) {
 		nbt.put("pigment", pigment.serializeToNBT())
 	}
 
-	override fun readNbt(nbt: NbtCompound) {
+	override fun load(nbt: CompoundTag) {
 		pigment = FrozenPigment.fromNBT(nbt.getCompound("pigment"))
 	}
 
-	override fun toInitialChunkDataNbt(): NbtCompound = createNbt()
-	override fun toUpdatePacket(): BlockEntityUpdateS2CPacket = BlockEntityUpdateS2CPacket.create(this)
+	override fun getUpdateTag(): CompoundTag = saveWithoutMetadata()
+	override fun getUpdatePacket(): ClientboundBlockEntityDataPacket = ClientboundBlockEntityDataPacket.create(this)
 }

@@ -12,14 +12,14 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.NullIota
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import net.minecraft.entity.ItemEntity
-import net.minecraft.inventory.Inventory
-import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3d
-import net.minecraft.world.World
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.Container
+import net.minecraft.world.WorldlyContainer
+import net.minecraft.world.item.ItemStack
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.world.phys.Vec3
+import net.minecraft.world.level.Level
 
 class OpHopperExtract : SpellAction {
 	override val argc = 3
@@ -31,12 +31,12 @@ class OpHopperExtract : SpellAction {
 		env.assertPosInRange(inventoryPosition)
 
 		val dirRaw = args.getBlockPos(2, argc)
-		val direction = Direction.fromVector(dirRaw.x, dirRaw.y, dirRaw.z) ?: throw MishapInvalidIota.of(args[2], 0, "axis_vector")
+		val direction = Direction.fromDelta(dirRaw.x, dirRaw.y, dirRaw.z) ?: throw MishapInvalidIota.of(args[2], 0, "axis_vector")
 
-		return SpellAction.Result(Spell(spawnPosition, inventoryPosition, direction), MediaConstants.DUST_UNIT, listOf(ParticleSpray.burst(spawnPosition, 1.0), ParticleSpray.burst(inventoryPosition.toCenterPos(), 1.0)))
+		return SpellAction.Result(Spell(spawnPosition, inventoryPosition, direction), MediaConstants.DUST_UNIT, listOf(ParticleSpray.burst(spawnPosition, 1.0), ParticleSpray.burst(inventoryPosition.getCenter(), 1.0)))
 	}
 
-	private data class Spell(val spawnPosition: Vec3d, val inventoryPosition: BlockPos, val direction: Direction) : RenderedSpell {
+	private data class Spell(val spawnPosition: Vec3, val inventoryPosition: BlockPos, val direction: Direction) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {}
 		override fun cast(env: CastingEnvironment, image: CastingImage): CastingImage {
 			val stack = extract(env.world, inventoryPosition, direction)
@@ -47,7 +47,7 @@ class OpHopperExtract : SpellAction {
 			}
 
 			val item = ItemEntity(env.world, spawnPosition.x, spawnPosition.y, spawnPosition.z, stack)
-			env.world.spawnEntity(item)
+			env.world.addFreshEntity(item)
 			val newStack = image.stack.toMutableList()
 			newStack.add(EntityIota(item))
 			return image.copy(stack = newStack)
@@ -55,30 +55,30 @@ class OpHopperExtract : SpellAction {
 	}
 
 	companion object {
-		fun extract(world: World, pos: BlockPos, fromDirection: Direction): ItemStack {
+		fun extract(world: Level, pos: BlockPos, fromDirection: Direction): ItemStack {
 			val blockEntity = world.getBlockEntity(pos) ?: return ItemStack.EMPTY
-			if (blockEntity !is Inventory)
+			if (blockEntity !is Container)
 				return ItemStack.EMPTY
 
-			if (blockEntity is SidedInventory) {
-				for (slot in blockEntity.getAvailableSlots(fromDirection)) {
-					val stack = blockEntity.getStack(slot)
-					if (!stack.isEmpty && blockEntity.canExtract(slot, stack, fromDirection)) {
+			if (blockEntity is WorldlyContainer) {
+				for (slot in blockEntity.getSlotsForFace(fromDirection)) {
+					val stack = blockEntity.getItem(slot)
+					if (!stack.isEmpty && blockEntity.canTakeItemThroughFace(slot, stack, fromDirection)) {
 						val extracted = stack.copy()
 						extracted.count = 1
-						stack.decrement(1)
-						blockEntity.markDirty()
+						stack.shrink(1)
+						blockEntity.setChanged()
 						return extracted
 					}
 				}
 			} else {
-				for (slot in 0 until blockEntity.size()) {
-					val stack = blockEntity.getStack(slot)
+				for (slot in 0 until blockEntity.getContainerSize()) {
+					val stack = blockEntity.getItem(slot)
 					if (!stack.isEmpty) {
 						val extracted = stack.copy()
 						extracted.count = 1
-						stack.decrement(1)
-						blockEntity.markDirty()
+						stack.shrink(1)
+						blockEntity.setChanged()
 						return extracted
 					}
 				}

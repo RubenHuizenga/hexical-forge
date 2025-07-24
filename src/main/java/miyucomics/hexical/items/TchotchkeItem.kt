@@ -4,40 +4,40 @@ import at.petrak.hexcasting.api.casting.iota.IotaType
 import at.petrak.hexcasting.api.casting.iota.ListIota
 import at.petrak.hexcasting.api.utils.putCompound
 import at.petrak.hexcasting.common.items.magic.ItemPackagedHex
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.Hand
-import net.minecraft.util.TypedActionResult
-import net.minecraft.world.World
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.InteractionResultHolder
+import net.minecraft.world.level.Level
 
-class TchotchkeItem : ItemPackagedHex(Settings().maxCount(1)) {
+class TchotchkeItem : ItemPackagedHex(Properties().stacksTo(1)) {
 	override fun canDrawMediaFromInventory(stack: ItemStack) = false
-	override fun isItemBarVisible(stack: ItemStack) = false
+	override fun isBarVisible(stack: ItemStack) = false
 	override fun canRecharge(stack: ItemStack) = false
 	override fun breakAfterDepletion() = true
 	override fun cooldown() = 0
 
-	override fun use(world: World, player: PlayerEntity, usedHand: Hand): TypedActionResult<ItemStack> {
-		if (world.isClient)
-			return TypedActionResult.success(player.getStackInHand(usedHand))
-		val stack = player.getStackInHand(usedHand)
+	override fun use(world: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
+		if (world.isClientSide)
+			return InteractionResultHolder.success(player.getItemInHand(usedHand))
+		val stack = player.getItemInHand(usedHand)
 		if (hasHex(stack) && getMedia(stack) > 0) {
 			val charmed = ItemStack(Items.STICK)
-			val nbt = charmed.orCreateNbt
-			val charm = NbtCompound()
+			val nbt = charmed.orCreateTag
+			val charm = CompoundTag()
 			charm.putLong("media", getMedia(stack))
 			charm.putLong("max_media", getMedia(stack))
-			charm.putCompound("instructions", IotaType.serialize(ListIota(getHex(stack, world as ServerWorld)!!)))
+			charm.putCompound("instructions", IotaType.serialize(ListIota(getHex(stack, world as ServerLevel)!!)))
 			charm.putBoolean("left", true)
 			charm.putBoolean("right", true)
 			charm.putBoolean("left_sneak", true)
 			charm.putBoolean("right_sneak", true)
 			nbt.putCompound("charmed", charm)
-			player.setStackInHand(usedHand, charmed)
+			player.setItemInHand(usedHand, charmed)
 		}
-		return TypedActionResult.success(player.getStackInHand(usedHand))
+		return InteractionResultHolder.success(player.getItemInHand(usedHand))
 	}
 }

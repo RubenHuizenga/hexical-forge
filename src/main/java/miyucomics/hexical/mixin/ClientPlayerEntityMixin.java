@@ -1,34 +1,34 @@
 package miyucomics.hexical.mixin;
 
 import at.petrak.hexcasting.client.gui.GuiSpellcasting;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.input.Input;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.Input;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.Options;
+import net.minecraft.client.KeyMapping;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ClientPlayerEntity.class)
+@Mixin(LocalPlayer.class)
 public class ClientPlayerEntityMixin {
 	@Shadow
 	public Input input;
 
-	@Inject(method = "tickMovement", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/TutorialManager;onMovement(Lnet/minecraft/client/input/Input;)V"))
+	@Inject(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onInput(Lnet/minecraft/client/player/Input;)V"))
 	private void onInputUpdate(CallbackInfo info) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.currentScreen instanceof GuiSpellcasting) {
-			KeyBinding.updatePressedStates();
-			GameOptions keys = client.options;
-			input.pressingForward = keys.forwardKey.isPressed();
-			input.pressingBack = keys.backKey.isPressed();
-			input.pressingLeft = keys.leftKey.isPressed();
-			input.pressingRight = keys.rightKey.isPressed();
-			input.jumping = keys.jumpKey.isPressed();
-			input.sneaking = keys.sneakKey.isPressed();
+		Minecraft client = Minecraft.getInstance();
+		if (client.screen instanceof GuiSpellcasting) {
+			KeyMapping.setAll();
+			Options keys = client.options;
+			input.up = keys.keyUp.isDown();
+			input.down = keys.keyDown.isDown();
+			input.left = keys.keyLeft.isDown();
+			input.down = keys.keyRight.isDown();
+			input.jumping = keys.keyJump.isDown();
+			input.shiftKeyDown = keys.keyShift.isDown();
 		}
 	}
 }

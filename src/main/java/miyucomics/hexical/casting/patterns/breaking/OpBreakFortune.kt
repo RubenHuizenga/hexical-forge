@@ -7,11 +7,11 @@ import at.petrak.hexcasting.api.casting.getBlockPos
 import at.petrak.hexcasting.api.casting.getPositiveIntUnderInclusive
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import net.minecraft.block.Block
-import net.minecraft.enchantment.Enchantments
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.item.enchantment.Enchantments
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.core.BlockPos
 
 class OpBreakFortune : SpellAction {
 	override val argc = 2
@@ -28,9 +28,9 @@ class OpBreakFortune : SpellAction {
 			if (state.isAir)
 				return
 			val tool = ItemStack(Items.DIAMOND_PICKAXE)
-			tool.addEnchantment(Enchantments.FORTUNE, level + 1)
-			Block.dropStacks(state, env.world, pos, null, null, tool)
-			env.world.breakBlock(pos, false)
+			tool.enchant(Enchantments.BLOCK_FORTUNE, level + 1)
+			Block.dropResources(state, env.world, pos, null, null, tool)
+			env.world.destroyBlock(pos, false)
 		}
 	}
 }

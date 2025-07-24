@@ -8,11 +8,11 @@ import at.petrak.hexcasting.api.pigment.FrozenPigment
 import at.petrak.hexcasting.api.utils.putCompound
 import at.petrak.hexcasting.xplat.IXplatAbstractions
 import miyucomics.hexical.utils.CharmedItemUtilities
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.util.Hand
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionHand
 
-class CharmedItemCastEnv(caster: ServerPlayerEntity, castingHand: Hand, val stack: ItemStack) : PlayerBasedCastEnv(caster, castingHand) {
+class CharmedItemCastEnv(caster: ServerPlayer, castingHand: InteractionHand, val stack: ItemStack) : PlayerBasedCastEnv(caster, castingHand) {
 	override fun extractMediaEnvironment(cost: Long, simulate: Boolean): Long {
 		if (caster.isCreative) return 0
 		var costLeft = cost
@@ -24,16 +24,16 @@ class CharmedItemCastEnv(caster: ServerPlayerEntity, castingHand: Hand, val stac
 		return costLeft
 	}
 
-	override fun getCastingHand(): Hand = this.castingHand
+	override fun getCastingHand(): InteractionHand = this.castingHand
 	override fun getPigment(): FrozenPigment = IXplatAbstractions.INSTANCE.getPigment(this.caster)
 
 	fun getInternalStorage(): Iota {
-		val nbt = this.stack.orCreateNbt
+		val nbt = this.stack.orCreateTag
 		if (nbt.contains("charmed_storage"))
-			return IotaType.deserialize(nbt.getCompound("charmed_storage"), caster.serverWorld)
+			return IotaType.deserialize(nbt.getCompound("charmed_storage"), caster.serverLevel())
 		return NullIota()
 	}
 
 	fun setInternalStorage(iota: Iota) =
-		this.stack.orCreateNbt.putCompound("charmed_storage", IotaType.serialize(iota))
+		this.stack.orCreateTag.putCompound("charmed_storage", IotaType.serialize(iota))
 }

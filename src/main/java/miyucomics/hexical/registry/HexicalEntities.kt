@@ -6,32 +6,77 @@ import miyucomics.hexical.entities.specklikes.MeshEntity
 import miyucomics.hexical.entities.specklikes.MeshRenderer
 import miyucomics.hexical.entities.specklikes.SpeckEntity
 import miyucomics.hexical.entities.specklikes.SpeckRenderer
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry
-import net.minecraft.entity.EntityType
-import net.minecraft.entity.SpawnGroup
-import net.minecraft.registry.Registries
-import net.minecraft.registry.Registry
+import net.minecraftforge.client.event.EntityRenderersEvent
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.MobCategory
+import net.minecraftforge.registries.RegisterEvent
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraftforge.registries.DeferredRegister
+import net.minecraftforge.registries.RegistryObject
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
 
+@Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = [Dist.CLIENT])
 object HexicalEntities {
-	val ANIMATED_SCROLL_ENTITY: EntityType<AnimatedScrollEntity> = EntityType.Builder.create(::AnimatedScrollEntity, SpawnGroup.MISC).setDimensions(0.5f, 0.5f).maxTrackingRange(10).trackingTickInterval(1).build(HexicalMain.MOD_ID + ":animated_scroll")
-	val MAGIC_MISSILE_ENTITY: EntityType<MagicMissileEntity> = EntityType.Builder.create(::MagicMissileEntity, SpawnGroup.MISC).setDimensions(0.5f, 0.5f).maxTrackingRange(4).trackingTickInterval(20).build(HexicalMain.MOD_ID + ":magic_missile")
-	val SPIKE_ENTITY: EntityType<SpikeEntity> = EntityType.Builder.create(::SpikeEntity, SpawnGroup.MISC).setDimensions(1f, 1f).maxTrackingRange(10).trackingTickInterval(1).build(HexicalMain.MOD_ID + ":spike")
-	val SPECK_ENTITY: EntityType<SpeckEntity> = EntityType.Builder.create(::SpeckEntity, SpawnGroup.MISC).setDimensions(0.5f, 0.5f).maxTrackingRange(32).trackingTickInterval(1).build(HexicalMain.MOD_ID + ":speck")
-	val MESH_ENTITY: EntityType<MeshEntity> = EntityType.Builder.create(::MeshEntity, SpawnGroup.MISC).setDimensions(0.5f, 0.5f).maxTrackingRange(32).trackingTickInterval(1).build(HexicalMain.MOD_ID + ":mesh")
+    private val ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, HexicalMain.MOD_ID)
+
+    val ANIMATED_SCROLL_ENTITY: RegistryObject<EntityType<AnimatedScrollEntity>> = 
+        ENTITY_TYPES.register("animated_scroll") {
+            EntityType.Builder.of(::AnimatedScrollEntity, MobCategory.MISC)
+                .sized(0.5f, 0.5f)
+                .clientTrackingRange(10)
+                .updateInterval(1)
+                .build(HexicalMain.MOD_ID + ":animated_scroll")
+        }
+
+    val MAGIC_MISSILE_ENTITY: RegistryObject<EntityType<MagicMissileEntity>> = 
+        ENTITY_TYPES.register("magic_missile") {
+            EntityType.Builder.of(::MagicMissileEntity, MobCategory.MISC)
+                .sized(0.5f, 0.5f)
+                .clientTrackingRange(4)
+                .updateInterval(20)
+                .build(HexicalMain.MOD_ID + ":magic_missile")
+        }
+
+    val SPIKE_ENTITY: RegistryObject<EntityType<SpikeEntity>> = 
+        ENTITY_TYPES.register("spike") {
+            EntityType.Builder.of(::SpikeEntity, MobCategory.MISC)
+                .sized(1f, 1f)
+                .clientTrackingRange(10)
+                .updateInterval(1)
+                .build(HexicalMain.MOD_ID + ":spike")
+        }
+
+    val SPECK_ENTITY: RegistryObject<EntityType<SpeckEntity>> = 
+        ENTITY_TYPES.register("speck") {
+            EntityType.Builder.of(::SpeckEntity, MobCategory.MISC)
+                .sized(0.5f, 0.5f)
+                .clientTrackingRange(32)
+                .updateInterval(1)
+                .build(HexicalMain.MOD_ID + ":speck")
+        }
+
+    val MESH_ENTITY: RegistryObject<EntityType<MeshEntity>> = 
+        ENTITY_TYPES.register("mesh") {
+            EntityType.Builder.of(::MeshEntity, MobCategory.MISC)
+                .sized(0.5f, 0.5f)
+                .clientTrackingRange(32)
+                .updateInterval(1)
+                .build(HexicalMain.MOD_ID + ":mesh")
+        }
 
 	fun init() {
-		Registry.register(Registries.ENTITY_TYPE, HexicalMain.id("animated_scroll"), ANIMATED_SCROLL_ENTITY)
-		Registry.register(Registries.ENTITY_TYPE, HexicalMain.id("magic_missile"), MAGIC_MISSILE_ENTITY)
-		Registry.register(Registries.ENTITY_TYPE, HexicalMain.id("spike"), SPIKE_ENTITY)
-		Registry.register(Registries.ENTITY_TYPE, HexicalMain.id("speck"), SPECK_ENTITY)
-		Registry.register(Registries.ENTITY_TYPE, HexicalMain.id("mesh"), MESH_ENTITY)
+		ENTITY_TYPES.register(MOD_BUS)
 	}
 
-	fun clientInit() {
-		EntityRendererRegistry.register(ANIMATED_SCROLL_ENTITY) { ctx -> AnimatedScrollRenderer(ctx) }
-		EntityRendererRegistry.register(MAGIC_MISSILE_ENTITY) { ctx -> MagicMissileRenderer(ctx) }
-		EntityRendererRegistry.register(SPIKE_ENTITY) { ctx -> SpikeRenderer(ctx) }
-		EntityRendererRegistry.register(SPECK_ENTITY) { ctx -> SpeckRenderer(ctx) }
-		EntityRendererRegistry.register(MESH_ENTITY) { ctx -> MeshRenderer(ctx) }
+    @SubscribeEvent
+	fun clientInit(event: EntityRenderersEvent.RegisterRenderers) {
+		event.registerEntityRenderer(ANIMATED_SCROLL_ENTITY.get(), ::AnimatedScrollRenderer)
+		event.registerEntityRenderer(MAGIC_MISSILE_ENTITY.get(), ::MagicMissileRenderer)
+		event.registerEntityRenderer(SPIKE_ENTITY.get(), ::SpikeRenderer)
+		event.registerEntityRenderer(SPECK_ENTITY.get(), ::SpeckRenderer)
+		event.registerEntityRenderer(MESH_ENTITY.get(), ::MeshRenderer)
 	}
 }

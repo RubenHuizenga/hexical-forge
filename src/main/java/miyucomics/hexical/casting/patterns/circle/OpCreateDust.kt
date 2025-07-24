@@ -13,9 +13,10 @@ import at.petrak.hexcasting.api.casting.mishaps.circle.MishapNoSpellCircle
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.common.lib.HexItems
 import miyucomics.hexical.casting.mishaps.OutsideCircleMishap
-import net.minecraft.entity.ItemEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.phys.Vec3
+import net.minecraft.util.Mth
 
 class OpCreateDust : SpellAction {
 	override val argc = 2
@@ -31,13 +32,13 @@ class OpCreateDust : SpellAction {
 			throw OutsideCircleMishap()
 		val amount = args.getPositiveIntUnderInclusive(1, 64, argc)
 
-		return SpellAction.Result(Spell(position, amount), MediaConstants.DUST_UNIT * amount * 1.1, listOf(ParticleSpray.burst(position, 1.0)))
+		return SpellAction.Result(Spell(position, amount), (MediaConstants.DUST_UNIT * amount * 1.1).toLong(), listOf(ParticleSpray.burst(position, 1.0)))
 	}
 
-	private data class Spell(val position: Vec3d, val amount: Int) : RenderedSpell {
+	private data class Spell(val position: Vec3, val amount: Int) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
 			val item = ItemStack(HexItems.AMETHYST_DUST, amount)
-			env.world.spawnEntity(ItemEntity(env.world, position.x, position.y, position.z, item))
+			env.world.addFreshEntity(ItemEntity(env.world, position.x, position.y, position.z, item))
 		}
 	}
 }

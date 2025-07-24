@@ -8,13 +8,13 @@ import miyucomics.hexical.casting.mishaps.NeedsArchGenieLampMishap
 import miyucomics.hexical.data.ArchLampState
 import miyucomics.hexical.interfaces.PlayerEntityMinterface
 import miyucomics.hexical.items.hasActiveArchLamp
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.level.ServerPlayer
 
 class OpGetArchLampData(private val process: (CastingEnvironment, ArchLampState) -> List<Iota>) : ConstMediaAction {
 	override val argc = 0
 	override fun execute(args: List<Iota>, env: CastingEnvironment): List<Iota> {
 		val caster = env.castingEntity
-		if (caster !is ServerPlayerEntity)
+		if (caster !is ServerPlayer)
 			return listOf(NullIota())
 		if (!hasActiveArchLamp(caster))
 			throw NeedsArchGenieLampMishap()

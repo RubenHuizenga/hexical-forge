@@ -2,27 +2,43 @@ package miyucomics.hexical.registry
 
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.particles.*
-import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry
-import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes
-import net.minecraft.particle.DefaultParticleType
-import net.minecraft.particle.ParticleType
-import net.minecraft.registry.Registries
-import net.minecraft.registry.Registry
+import miyucomics.hexical.particles.ConfettiParticle.Factory
+import net.minecraft.core.particles.ParticleType
+import net.minecraft.core.particles.SimpleParticleType
+import net.minecraft.client.Minecraft
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent
+import net.minecraftforge.client.event.EntityRenderersEvent
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.registries.DeferredRegister
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraftforge.registries.RegistryObject
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
+import com.mojang.serialization.Codec
 
+@Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 object HexicalParticles {
-	val CONFETTI_PARTICLE: DefaultParticleType = FabricParticleTypes.simple(true)
-	val CUBE_PARTICLE: ParticleType<CubeParticleEffect> = FabricParticleTypes.complex(CubeParticleEffect.Factory)
-	val SPARKLE_PARTICLE: ParticleType<SparkleParticleEffect> = FabricParticleTypes.complex(SparkleParticleEffect.Factory)
+	private val PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, HexicalMain.MOD_ID)
+
+	val CONFETTI_PARTICLE: RegistryObject<SimpleParticleType> = PARTICLE_TYPES.register("confetti") {
+        SimpleParticleType(true)
+    }
+   
+    val CUBE_PARTICLE: RegistryObject<ParticleType<CubeParticleEffect>> = PARTICLE_TYPES.register("cube") { 
+		CubeParticleEffect.Type
+	}
+
+    val SPARKLE_PARTICLE: RegistryObject<ParticleType<SparkleParticleEffect>> = PARTICLE_TYPES.register("sparkle") {
+        SparkleParticleEffect.Type
+	}
 
 	fun init() {
-		Registry.register(Registries.PARTICLE_TYPE, HexicalMain.id("confetti"), CONFETTI_PARTICLE)
-		Registry.register(Registries.PARTICLE_TYPE, HexicalMain.id("cube"), CUBE_PARTICLE)
-		Registry.register(Registries.PARTICLE_TYPE, HexicalMain.id("sparkle"), SPARKLE_PARTICLE)
+		PARTICLE_TYPES.register(MOD_BUS)
 	}
 
 	fun clientInit() {
-		ParticleFactoryRegistry.getInstance().register(CONFETTI_PARTICLE) { sprite -> ConfettiParticle.Factory(sprite) }
-		ParticleFactoryRegistry.getInstance().register(CUBE_PARTICLE) { sprite -> CubeParticle.Factory(sprite) }
-		ParticleFactoryRegistry.getInstance().register(SPARKLE_PARTICLE) { sprite -> SparkleParticle.Factory(sprite) }
+		Minecraft.getInstance().particleEngine.register(CONFETTI_PARTICLE.get()) { sprite -> ConfettiParticle.Factory(sprite) }
+		Minecraft.getInstance().particleEngine.register(CUBE_PARTICLE.get()) { sprite -> CubeParticle.Factory(sprite) }
+		Minecraft.getInstance().particleEngine.register(SPARKLE_PARTICLE.get()) { sprite -> SparkleParticle.Factory(sprite) }
 	}
 }

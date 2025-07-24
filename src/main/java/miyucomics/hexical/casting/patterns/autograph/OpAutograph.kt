@@ -11,15 +11,15 @@ import at.petrak.hexcasting.api.utils.getOrCreateList
 import at.petrak.hexcasting.api.utils.putCompound
 import at.petrak.hexcasting.xplat.IXplatAbstractions
 import miyucomics.hexical.casting.mishaps.NoStaffMishap
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.server.level.ServerPlayer
 
 class OpAutograph : SpellAction {
 	override val argc = 0
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
-		if (env.castingEntity !is PlayerEntity)
+		if (env.castingEntity !is Player)
 			throw MishapBadCaster()
 		if (env !is StaffCastEnv)
 			throw NoStaffMishap()
@@ -31,12 +31,12 @@ class OpAutograph : SpellAction {
 
 	private data class Spell(val stack: ItemStack) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val caster = env.castingEntity as ServerPlayerEntity
-			val list = stack.orCreateNbt.getOrCreateList("autographs", NbtCompound.COMPOUND_TYPE.toInt())
-			list.removeIf { compound -> (compound as NbtCompound).getString("name") == caster.entityName }
+			val caster = env.castingEntity as ServerPlayer
+			val list = stack.orCreateTag.getOrCreateList("autographs", CompoundTag.TAG_COMPOUND.toInt())
+			list.removeIf { compound -> (compound as CompoundTag).getString("name") == caster.scoreboardName }
 
-			val compound = NbtCompound()
-			compound.putString("name", caster.entityName)
+			val compound = CompoundTag()
+			compound.putString("name", caster.scoreboardName)
 			compound.putCompound("pigment", IXplatAbstractions.INSTANCE.getPigment(caster).serializeToNBT())
 			list.add(0, compound)
 		}

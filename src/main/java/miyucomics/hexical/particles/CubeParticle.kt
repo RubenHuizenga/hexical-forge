@@ -3,55 +3,57 @@ package miyucomics.hexical.particles
 import com.mojang.brigadier.StringReader
 import miyucomics.hexical.registry.HexicalParticles
 import net.minecraft.client.particle.*
-import net.minecraft.client.render.Camera
-import net.minecraft.client.render.LightmapTextureManager
-import net.minecraft.client.render.VertexConsumer
-import net.minecraft.client.world.ClientWorld
-import net.minecraft.network.PacketByteBuf
-import net.minecraft.particle.AbstractDustParticleEffect
-import net.minecraft.particle.ParticleEffect
-import net.minecraft.particle.ParticleType
-import net.minecraft.util.math.Vec3d
+import net.minecraft.client.Camera
+import com.mojang.blaze3d.vertex.VertexConsumer
+import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.client.renderer.LightTexture
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.core.particles.DustParticleOptionsBase
+import net.minecraft.core.particles.ParticleOptions
+import net.minecraft.core.particles.ParticleType
+import net.minecraft.world.phys.Vec3
 import org.joml.Vector3f
 import java.util.*
 import kotlin.math.max
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-class CubeParticle(world: ClientWorld?, x: Double, y: Double, z: Double) : SpriteBillboardParticle(world, x, y, z) {
-	override fun buildGeometry(vertexConsumer: VertexConsumer, camera: Camera, tickDelta: Float) {
-		val cam = camera.pos
+class CubeParticle(world: ClientLevel, x: Double, y: Double, z: Double) : TextureSheetParticle(world, x, y, z) {
+	override fun render(vertexConsumer: VertexConsumer, camera: Camera, tickDelta: Float) {
+		val cam = camera.position
 		val centerX = (x - cam.x).toFloat()
 		val centerY = (y - cam.y).toFloat()
 		val centerZ = (z - cam.z).toFloat()
-		val alpha = max(0f, (1f - (age + tickDelta) / maxAge.toFloat()))
+		val alpha = max(0f, (1f - (age + tickDelta) / lifetime.toFloat()))
 		for (face in faces)
 			renderFace(vertexConsumer, face, centerX, centerY, centerZ, alpha)
 	}
 
 	private fun renderFace(consumer: VertexConsumer, indices: IntArray, x: Float, y: Float, z: Float, alpha: Float) {
 		val uvs = arrayOf(
-			floatArrayOf(this.maxU, this.maxV),
-			floatArrayOf(this.maxU, this.minV),
-			floatArrayOf(this.minU, this.minV),
-			floatArrayOf(this.minU, this.maxV)
+			floatArrayOf(this.u1, this.v1),
+			floatArrayOf(this.u1, this.v0),
+			floatArrayOf(this.u0, this.v0),
+			floatArrayOf(this.u0, this.v1)
 		)
 
 		for (i in indices.indices) {
 			val pos = positions[indices[i]]
 			val uv = uvs[i]
-			consumer.vertex(x + pos.x, y + pos.y, z + pos.z).texture(uv[0], uv[1]).color(red, green, blue, alpha).light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
+			consumer.vertex(x + pos.x, y + pos.y, z + pos.z).uv(uv[0], uv[1]).color(rCol, gCol, bCol, alpha).uv2(LightTexture.FULL_BRIGHT)
 		}
 	}
 
-	override fun getType(): ParticleTextureSheet {
-		return ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT
+	override fun getRenderType(): ParticleRenderType {
+		return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT
 	}
 
-	class Factory(private val spriteProvider: SpriteProvider) : ParticleFactory<CubeParticleEffect> {
-		override fun createParticle(effect: CubeParticleEffect, clientWorld: ClientWorld, d: Double, e: Double, f: Double, g: Double, h: Double, i: Double): Particle {
+	class Factory(private val spriteProvider: SpriteSet) : ParticleProvider<CubeParticleEffect> {
+		override fun createParticle(effect: CubeParticleEffect, clientWorld: ClientLevel, d: Double, e: Double, f: Double, g: Double, h: Double, i: Double): Particle {
 			val particle = CubeParticle(clientWorld, d, e, f)
-			particle.setSprite(this.spriteProvider)
+			particle.pickSprite(this.spriteProvider)
 			particle.setColor(effect.color.x, effect.color.y, effect.color.z)
-			particle.setMaxAge(effect.lifespan)
+			particle.setLifetime(effect.lifespan)
 			return particle
 		}
 	}
@@ -60,14 +62,14 @@ class CubeParticle(world: ClientWorld?, x: Double, y: Double, z: Double) : Sprit
 		private const val SCALE = 0.501
 
 		private val positions = arrayOf(
-			Vec3d( SCALE,  SCALE,  SCALE),
-			Vec3d( SCALE, -SCALE,  SCALE),
-			Vec3d(-SCALE, -SCALE,  SCALE),
-			Vec3d(-SCALE,  SCALE,  SCALE),
-			Vec3d( SCALE,  SCALE, -SCALE),
-			Vec3d( SCALE, -SCALE, -SCALE),
-			Vec3d(-SCALE, -SCALE, -SCALE),
-			Vec3d(-SCALE,  SCALE, -SCALE)
+			Vec3( SCALE,  SCALE,  SCALE),
+			Vec3( SCALE, -SCALE,  SCALE),
+			Vec3(-SCALE, -SCALE,  SCALE),
+			Vec3(-SCALE,  SCALE,  SCALE),
+			Vec3( SCALE,  SCALE, -SCALE),
+			Vec3( SCALE, -SCALE, -SCALE),
+			Vec3(-SCALE, -SCALE, -SCALE),
+			Vec3(-SCALE,  SCALE, -SCALE)
 		)
 
 		private val faces = arrayOf(
@@ -81,27 +83,44 @@ class CubeParticle(world: ClientWorld?, x: Double, y: Double, z: Double) : Sprit
 	}
 }
 
-class CubeParticleEffect(val color: Vector3f, val lifespan: Int) : ParticleEffect {
-	object Factory : ParticleEffect.Factory<CubeParticleEffect> {
-		override fun read(type: ParticleType<CubeParticleEffect>, buf: PacketByteBuf): CubeParticleEffect {
-			return CubeParticleEffect(AbstractDustParticleEffect.readColor(buf), buf.readInt())
+class CubeParticleEffect(val color: Vector3f, val lifespan: Int) : ParticleOptions {
+	object Factory : ParticleOptions.Deserializer<CubeParticleEffect> {
+		override fun fromNetwork(type: ParticleType<CubeParticleEffect>, buf: FriendlyByteBuf): CubeParticleEffect {
+			return CubeParticleEffect(DustParticleOptionsBase.readVector3f(buf), buf.readInt())
 		}
 
-		override fun read(particleType: ParticleType<CubeParticleEffect>, stringReader: StringReader): CubeParticleEffect {
-			val color = AbstractDustParticleEffect.readColor(stringReader)
+		override fun fromCommand(particleType: ParticleType<CubeParticleEffect>, stringReader: StringReader): CubeParticleEffect {
+			val color = DustParticleOptionsBase.readVector3f(stringReader)
 			stringReader.expect(' ')
 			val lifespan = stringReader.readInt()
 			return CubeParticleEffect(color, lifespan)
 		}
 	}
 
-	override fun getType() = HexicalParticles.CUBE_PARTICLE
-	override fun asString() = String.format(Locale.ROOT, "cube_particle %.2f %.2f %.2f", color.x(), color.y(), color.z())
+	override fun getType() = HexicalParticles.CUBE_PARTICLE.get()
+	override fun writeToString() = String.format(Locale.ROOT, "cube_particle %.2f %.2f %.2f", color.x(), color.y(), color.z())
 
-	override fun write(packet: PacketByteBuf) {
+	override fun writeToNetwork(packet: FriendlyByteBuf) {
 		packet.writeFloat(color.x())
 		packet.writeFloat(color.y())
 		packet.writeFloat(color.z())
 		packet.writeInt(lifespan)
+	}
+		
+	object Type : ParticleType<CubeParticleEffect>(false, CubeParticleEffect.Factory) {
+		override fun codec(): Codec<CubeParticleEffect> { 
+			return CODEC
+		}
+
+		val CODEC: Codec<CubeParticleEffect> = RecordCodecBuilder.create { instance ->
+			instance.group(
+				Codec.FLOAT.fieldOf("r").forGetter { it.color.x() },
+				Codec.FLOAT.fieldOf("g").forGetter { it.color.y() },
+				Codec.FLOAT.fieldOf("b").forGetter { it.color.z() },
+				Codec.INT.fieldOf("lifespan").forGetter { it.lifespan }
+			).apply(instance) { r, g, b, lifespan -> 
+				CubeParticleEffect(Vector3f(r, g, b), lifespan)
+			}
+		}
 	}
 }

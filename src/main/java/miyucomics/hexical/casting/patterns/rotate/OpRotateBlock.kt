@@ -11,12 +11,13 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapBadBlock
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.xplat.IXplatAbstractions
-import net.minecraft.block.BlockState
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.state.property.DirectionProperty
-import net.minecraft.state.property.Properties
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.level.block.state.properties.DirectionProperty
+import net.minecraft.world.level.block.state.properties.BlockStateProperties
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.commands.arguments.blocks.BlockStateParser
 
 class OpRotateBlock : SpellAction {
 	override val argc = 2
@@ -25,12 +26,12 @@ class OpRotateBlock : SpellAction {
 		val target = args.getBlockPos(0, argc)
 		env.assertPosInRange(target)
 		val rotation = args.getVec3(1, argc)
-		val direction = Direction.fromVector(rotation.x.toInt(), rotation.y.toInt(), rotation.z.toInt()) ?: throw MishapInvalidIota.of(args[1], 0, "axis_vector")
+		val direction = Direction.fromDelta(rotation.x.toInt(), rotation.y.toInt(), rotation.z.toInt()) ?: throw MishapInvalidIota.of(args[1], 0, "axis_vector")
 
 		val block = env.world.getBlockState(target)
 		rotationProperties.forEach {
-			if (block.contains(it))
-				return SpellAction.Result(Spell(target, direction), MediaConstants.DUST_UNIT / 8, listOf(ParticleSpray.burst(target.toCenterPos(), 1.0)))
+			if (block.hasProperty(it))
+				return SpellAction.Result(Spell(target, direction), MediaConstants.DUST_UNIT / 8, listOf(ParticleSpray.burst(target.getCenter(), 1.0)))
 		}
 
 		throw MishapBadBlock.of(target, "rotatable")
@@ -46,30 +47,30 @@ class OpRotateBlock : SpellAction {
 	}
 
 	companion object {
-		private val rotationProperties: List<DirectionProperty> = listOf(Properties.FACING, Properties.HOPPER_FACING, Properties.HORIZONTAL_FACING, Properties.VERTICAL_DIRECTION)
+		private val rotationProperties: List<DirectionProperty> = listOf(BlockStateProperties.FACING, BlockStateProperties.FACING_HOPPER, BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.VERTICAL_DIRECTION)
 
-		private fun setBlockDirection(world: ServerWorld, blockPos: BlockPos, newDirection: Direction) {
+		private fun setBlockDirection(world: ServerLevel, blockPos: BlockPos, newDirection: Direction) {
 			val blockState = world.getBlockState(blockPos)
 			var modifiedState: BlockState? = null
-			if (blockState.properties.contains(Properties.FACING))
-				modifiedState = blockState.with(Properties.FACING, newDirection)
-			if (blockState.properties.contains(Properties.HOPPER_FACING))
-				modifiedState = blockState.with(Properties.HOPPER_FACING, if (newDirection == Direction.UP) Direction.DOWN else newDirection)
-			if (blockState.properties.contains(Properties.HORIZONTAL_FACING)) {
+			if (blockState.properties.contains(BlockStateProperties.FACING))
+				modifiedState = blockState.setValue(BlockStateProperties.FACING, newDirection)
+			if (blockState.properties.contains(BlockStateProperties.FACING_HOPPER))
+				modifiedState = blockState.setValue(BlockStateProperties.FACING_HOPPER, if (newDirection == Direction.UP) Direction.DOWN else newDirection)
+			if (blockState.properties.contains(BlockStateProperties.HORIZONTAL_FACING)) {
 				if (newDirection == Direction.UP || newDirection == Direction.DOWN)
 					return
-				modifiedState = blockState.with(Properties.HORIZONTAL_FACING, newDirection)
+				modifiedState = blockState.setValue(BlockStateProperties.HORIZONTAL_FACING, newDirection)
 			}
-			if (blockState.properties.contains(Properties.VERTICAL_DIRECTION)) {
+			if (blockState.properties.contains(BlockStateProperties.VERTICAL_DIRECTION)) {
 				if (newDirection == Direction.EAST || newDirection == Direction.WEST || newDirection == Direction.NORTH || newDirection == Direction.SOUTH)
 					return
-				modifiedState = blockState.with(Properties.VERTICAL_DIRECTION, newDirection)
+				modifiedState = blockState.setValue(BlockStateProperties.VERTICAL_DIRECTION, newDirection)
 			}
 
 			if (modifiedState == null)
 				return
-			world.setBlockState(blockPos, modifiedState)
-			world.updateNeighbors(blockPos, modifiedState.block)
+			world.setBlockAndUpdate(blockPos, modifiedState)
+			world.updateNeighborsAt(blockPos, modifiedState.block)
 		}
 	}
 }

@@ -12,39 +12,39 @@ import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.ktxt.tellWitnessesThatIWasMurdered
 import at.petrak.hexcasting.xplat.IXplatAbstractions
 import miyucomics.hexical.registry.HexicalItems
-import net.minecraft.entity.ItemEntity
-import net.minecraft.entity.mob.MobEntity
-import net.minecraft.entity.passive.VillagerEntity
-import net.minecraft.item.ItemStack
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.entity.Mob
+import net.minecraft.world.entity.npc.Villager
+import net.minecraft.world.item.ItemStack
 
 class OpPromoteLamp : SpellAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
 		val sacrifice = args.getEntity(0, argc)
 		env.assertEntityInRange(sacrifice)
-		if (sacrifice is MobEntity && IXplatAbstractions.INSTANCE.isBrainswept(sacrifice))
+		if (sacrifice is Mob && IXplatAbstractions.INSTANCE.isBrainswept(sacrifice))
 			throw MishapBadEntity.of(sacrifice, "has_brain")
-		if (sacrifice !is VillagerEntity || sacrifice.villagerData.level < 3)
+		if (sacrifice !is Villager || sacrifice.villagerData.level < 3)
 			throw MishapBadEntity.of(sacrifice, "smart_villager")
 
-		val stack = env.getHeldItemToOperateOn { stack -> stack.isOf(HexicalItems.HAND_LAMP_ITEM) }
+		val stack = env.getHeldItemToOperateOn { stack -> stack.`is`(HexicalItems.HAND_LAMP_ITEM.get()) }
 		if (stack == null)
 			throw MishapBadOffhandItem.of(null, "hand_lamp")
-		return SpellAction.Result(Spell(sacrifice, stack.stack), MediaConstants.CRYSTAL_UNIT * 10, listOf(ParticleSpray.cloud(sacrifice.eyePos, 3.0, 500)))
+		return SpellAction.Result(Spell(sacrifice, stack.stack), MediaConstants.CRYSTAL_UNIT * 10, listOf(ParticleSpray.cloud(sacrifice.eyePosition, 3.0, 500)))
 	}
 
-	private data class Spell(val sacrifice: VillagerEntity, val original: ItemStack) : RenderedSpell {
+	private data class Spell(val sacrifice: Villager, val original: ItemStack) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val archLamp = ItemStack(HexicalItems.ARCH_LAMP_ITEM)
+			val archLamp = ItemStack(HexicalItems.ARCH_LAMP_ITEM.get())
 			val hexHolder = IXplatAbstractions.INSTANCE.findHexHolder(archLamp)!!
 			val mediaHolder = IXplatAbstractions.INSTANCE.findMediaHolder(original)!!
 			hexHolder.writeHex(hexHolder.getHex(env.world) ?: listOf(), null, mediaHolder.media)
 
 			val item = ItemEntity(env.world, sacrifice.x, sacrifice.eyeY, sacrifice.z, archLamp, 0.0, 0.0, 0.0)
 			item.setNoGravity(true)
-			env.world.spawnEntity(item)
+			env.world.addFreshEntity(item)
 
-			original.decrement(1)
+			original.shrink(1)
 			sacrifice.tellWitnessesThatIWasMurdered(env.castingEntity!!)
 			sacrifice.discard()
 		}

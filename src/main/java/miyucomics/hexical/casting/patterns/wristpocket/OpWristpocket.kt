@@ -7,24 +7,24 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.interfaces.PlayerEntityMinterface
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.util.Hand
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionHand
 
 class OpWristpocket : SpellAction {
 	override val argc = 0
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
 		val caster = env.castingEntity
-		if (caster !is ServerPlayerEntity)
+		if (caster !is ServerPlayer)
 			throw MishapBadCaster()
 		return SpellAction.Result(Spell(env.otherHand), MediaConstants.DUST_UNIT / 8, listOf())
 	}
 
-	private data class Spell(val hand: Hand) : RenderedSpell {
+	private data class Spell(val hand: InteractionHand) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val caster = env.castingEntity as ServerPlayerEntity
+			val caster = env.castingEntity as ServerPlayer
 			val item = (caster as PlayerEntityMinterface).getWristpocket()
-			(caster as PlayerEntityMinterface).setWristpocket(caster.getStackInHand(hand))
-			caster.setStackInHand(hand, item)
+			(caster as PlayerEntityMinterface).setWristpocket(caster.getItemInHand(hand))
+			caster.setItemInHand(hand, item)
 		}
 	}
 }

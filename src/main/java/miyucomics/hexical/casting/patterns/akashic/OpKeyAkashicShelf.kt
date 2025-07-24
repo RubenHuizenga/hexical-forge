@@ -16,7 +16,7 @@ class OpKeyAkashicShelf : ConstMediaAction {
 		val position = args.getBlockPos(0, argc)
 		env.assertPosInRange(position)
 		val block = env.world.getBlockState(position)
-		if (!block.isOf(HexBlocks.AKASHIC_BOOKSHELF))
+		if (!block.`is`(HexBlocks.AKASHIC_BOOKSHELF))
 			throw MishapBadBlock.of(position, "akashic_bookshelf")
 		val pattern = (env.world.getBlockEntity(position) as BlockEntityAkashicBookshelf).pattern ?: return listOf(NullIota())
 		return pattern.asActionResult

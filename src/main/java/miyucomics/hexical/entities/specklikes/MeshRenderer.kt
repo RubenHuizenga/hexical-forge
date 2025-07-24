@@ -2,61 +2,66 @@ package miyucomics.hexical.entities.specklikes
 
 import at.petrak.hexcasting.api.HexAPI.modLoc
 import at.petrak.hexcasting.api.pigment.FrozenPigment
-import net.minecraft.client.render.*
-import net.minecraft.client.render.entity.EntityRenderer
-import net.minecraft.client.render.entity.EntityRendererFactory
-import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.util.Identifier
-import net.minecraft.util.math.RotationAxis
-import net.minecraft.util.math.Vec3d
+import com.mojang.blaze3d.vertex.VertexConsumer
+import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.client.renderer.RenderType
+import net.minecraft.client.renderer.texture.OverlayTexture
+import net.minecraft.client.renderer.LightTexture
+import net.minecraft.client.renderer.culling.Frustum
+import net.minecraft.client.renderer.entity.EntityRenderer
+import net.minecraft.client.renderer.entity.EntityRendererProvider
+import com.mojang.blaze3d.vertex.PoseStack
+import net.minecraft.resources.ResourceLocation
+import com.mojang.math.Axis
+import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import kotlin.math.cos
 import kotlin.math.sin
 
 @OptIn(ExperimentalStdlibApi::class)
-class MeshRenderer(ctx: EntityRendererFactory.Context) : EntityRenderer<MeshEntity>(ctx) {
-	override fun getTexture(entity: MeshEntity?): Identifier? = null
-	override fun shouldRender(entity: MeshEntity?, frustum: Frustum?, x: Double, y: Double, z: Double) = true
-	override fun render(entity: MeshEntity?, yaw: Float, tickDelta: Float, matrices: MatrixStack, vertexConsumers: VertexConsumerProvider, light: Int) {
-		val vertices = entity!!.clientVertices
+class MeshRenderer(ctx: EntityRendererProvider.Context) : EntityRenderer<MeshEntity>(ctx) {
+	override fun getTextureLocation(entity: MeshEntity): ResourceLocation? = null
+	override fun shouldRender(entity: MeshEntity, frustum: Frustum, x: Double, y: Double, z: Double) = true
+	override fun render(entity: MeshEntity, yaw: Float, tickDelta: Float, matrices: PoseStack, vertexConsumers: MultiBufferSource, light: Int) {
+		val vertices = entity.clientVertices
 		if (vertices.size < 2)
 			return
 
-		matrices.push()
+		matrices.pushPose()
 		matrices.translate(0.0, 0.25, 0.0)
-		matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-entity.yaw))
-		matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(entity.pitch))
-		matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(entity.clientRoll))
+		matrices.mulPose(Axis.YP.rotationDegrees(-entity.yRot))
+		matrices.mulPose(Axis.XP.rotationDegrees(entity.xRot))
+		matrices.mulPose(Axis.ZP.rotationDegrees(entity.clientRoll))
 		matrices.scale(entity.clientSize, entity.clientSize, entity.clientSize)
 
 		val buf = vertexConsumers.getBuffer(renderLayer)
 		for (i in 1..<vertices.size) {
 			val a = vertices[i - 1]
 			val b = vertices[i]
-			drawConnection(matrices, buf, Vec3d(a.x.toDouble(), a.y.toDouble(), a.z.toDouble()), Vec3d(b.x.toDouble(), b.y.toDouble(), b.z.toDouble()), entity.clientPigment, entity.clientThickness * 0.025)
+			drawConnection(matrices, buf, Vec3(a.x.toDouble(), a.y.toDouble(), a.z.toDouble()), Vec3(b.x.toDouble(), b.y.toDouble(), b.z.toDouble()), entity.clientPigment, entity.clientThickness * 0.025)
 		}
-		matrices.pop()
+		matrices.popPose()
 	}
 
-	private fun drawConnection(matrices: MatrixStack, vertices: VertexConsumer, start: Vec3d, end: Vec3d, pigment: FrozenPigment, thickness: Double) {
+	private fun drawConnection(matrices: PoseStack, vertices: VertexConsumer, start: Vec3, end: Vec3, pigment: FrozenPigment, thickness: Double) {
 		val direction = end.subtract(start).normalize()
-		var perpendicular = direction.crossProduct(Vec3d(1.0, 0.0, 0.0))
-		if (direction.dotProduct(Vec3d(1.0, 0.0, 0.0)) > 0.99 || direction.dotProduct(Vec3d(1.0, 0.0, 0.0)) < -0.99)
-			perpendicular = direction.crossProduct(Vec3d(0.0, 1.0, 0.0))
+		var perpendicular = direction.cross(Vec3(1.0, 0.0, 0.0))
+		if (direction.dot(Vec3(1.0, 0.0, 0.0)) > 0.99 || direction.dot(Vec3(1.0, 0.0, 0.0)) < -0.99)
+			perpendicular = direction.cross(Vec3(0.0, 1.0, 0.0))
 
-		val pose = matrices.peek().positionMatrix
-		val norm = matrices.peek().normalMatrix
+		val pose = matrices.last().pose()
+		val norm = matrices.last().normal()
 
 		// these calculations are reused often but could just be ran once
-		val perpendicularCrossProduct = perpendicular.crossProduct(direction)
-		val directionDotProduct = direction.multiply(direction.dotProduct(perpendicular))
+		val perpendicularCrossProduct = perpendicular.cross(direction)
+		val directionDotProduct = direction.multiply(direction.cross(perpendicular))
 
 		for (i in 0 until SIDES) {
 			val startAngle = i * ANGLE_INCREMENT
 			val endAngle = (i + 1) % SIDES * ANGLE_INCREMENT
-			val a = perpendicular.multiply(cos(startAngle)).add(perpendicularCrossProduct.multiply(sin(startAngle))).add(directionDotProduct.multiply(1 - cos(startAngle))).normalize().multiply(thickness)
-			val b = perpendicular.multiply(cos(endAngle)).add(perpendicularCrossProduct.multiply(sin(endAngle))).add(directionDotProduct.multiply(1 - cos(endAngle))).normalize().multiply(thickness)
+			val a = perpendicular.scale(cos(startAngle)).add(perpendicularCrossProduct.scale(sin(startAngle))).add(directionDotProduct.scale(1 - cos(startAngle))).normalize().scale(thickness)
+			val b = perpendicular.scale(cos(endAngle)).add(perpendicularCrossProduct.scale(sin(endAngle))).add(directionDotProduct.scale(1 - cos(endAngle))).normalize().scale(thickness)
 
 			vertex(pose, norm, vertices, start.add(a), pigment)
 			vertex(pose, norm, vertices, start.add(b), pigment)
@@ -65,19 +70,19 @@ class MeshRenderer(ctx: EntityRendererFactory.Context) : EntityRenderer<MeshEnti
 		}
 	}
 
-	private fun vertex(pose: Matrix4f, norm: Matrix3f, vertices: VertexConsumer, position: Vec3d, pigment: FrozenPigment) {
+	private fun vertex(pose: Matrix4f, norm: Matrix3f, vertices: VertexConsumer, position: Vec3, pigment: FrozenPigment) {
 		vertices.vertex(pose, position.x.toFloat(), position.y.toFloat(), position.z.toFloat())
 			.color(pigment.colorProvider.getColor(0f, position))
-			.texture(0f, 0f)
-			.overlay(OverlayTexture.DEFAULT_UV)
-			.light(LightmapTextureManager.MAX_LIGHT_COORDINATE)
+			.uv(0f, 0f)
+			.overlayCoords(OverlayTexture.NO_OVERLAY)
+			.uv2(LightTexture.FULL_BRIGHT)
 			.normal(norm, 0f, 1f, 0f)
-			.next()
+			.endVertex()
 	}
 
 	companion object {
 		private const val SIDES = 6
 		private const val ANGLE_INCREMENT = 2 * Math.PI / SIDES
-		private val renderLayer = RenderLayer.getEntityCutoutNoCull(modLoc("textures/entity/white.png"))
+		private val renderLayer = RenderType.entityCutoutNoCull(modLoc("textures/entity/white.png"))
 	}
 }

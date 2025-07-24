@@ -6,7 +6,7 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironmentComponent.PostExe
 import at.petrak.hexcasting.api.casting.eval.env.PlayerBasedCastEnv
 import at.petrak.hexcasting.api.casting.iota.PatternIota
 import miyucomics.hexical.data.LedgerData
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.level.ServerPlayer
 
 class LedgerRecordComponent(val env: PlayerBasedCastEnv) : PostExecution {
 	override fun getKey() = LedgerKey()
@@ -15,6 +15,6 @@ class LedgerRecordComponent(val env: PlayerBasedCastEnv) : PostExecution {
 	override fun onPostExecution(result: CastResult) {
 		val iota = result.cast
 		if (iota is PatternIota)
-			LedgerData.getLedger(env.castingEntity as ServerPlayerEntity).pushPattern(iota.pattern)
+			LedgerData.getLedger(env.castingEntity as ServerPlayer).pushPattern(iota.pattern)
 	}
 }

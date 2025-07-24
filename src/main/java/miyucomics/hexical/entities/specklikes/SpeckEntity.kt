@@ -6,44 +6,44 @@ import at.petrak.hexcasting.api.casting.math.HexPattern
 import at.petrak.hexcasting.api.utils.putCompound
 import miyucomics.hexical.registry.HexicalEntities
 import miyucomics.hexical.utils.RenderUtils
-import net.minecraft.entity.EntityType
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.text.Text
-import net.minecraft.util.math.Vec2f
-import net.minecraft.world.World
+import net.minecraft.world.entity.EntityType
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.chat.Component
+import net.minecraft.world.phys.Vec2
+import net.minecraft.world.level.Level
 
-class SpeckEntity(entityType: EntityType<out SpeckEntity>, world: World) : BaseSpecklike(entityType, world) {
-	constructor(world: World) : this(HexicalEntities.SPECK_ENTITY, world)
+class SpeckEntity(entityType: EntityType<out SpeckEntity>, world: Level) : BaseSpecklike(entityType, world) {
+	constructor(world: Level) : this(HexicalEntities.SPECK_ENTITY.get(), world)
 
 	var clientIsText = false
-	var clientText: Text = Text.empty()
-	var clientVerts: List<Vec2f> = listOf()
+	var clientText: Component = Component.empty()
+	var clientVerts: List<Vec2> = listOf()
 
-	override fun readCustomDataFromNbt(nbt: NbtCompound) {
-		super.readCustomDataFromNbt(nbt)
-		dataTracker.set(stateDataTracker, nbt.getCompound("display"))
+	override fun readAdditionalSaveData(nbt: CompoundTag) {
+		super.readAdditionalSaveData(nbt)
+		entityData.set(stateDataTracker, nbt.getCompound("display"))
 	}
 
-	override fun writeCustomDataToNbt(nbt: NbtCompound) {
-		super.writeCustomDataToNbt(nbt)
-		nbt.putCompound("display", dataTracker.get(stateDataTracker))
+	override fun addAdditionalSaveData(nbt: CompoundTag) {
+		super.addAdditionalSaveData(nbt)
+		nbt.putCompound("display", entityData.get(stateDataTracker))
 	}
 
 	fun setIota(iota: Iota) {
 		if (iota is PatternIota) {
-			dataTracker.set(stateDataTracker, iota.pattern.serializeToNBT())
+			entityData.set(stateDataTracker, iota.pattern.serializeToNBT())
 		} else {
-			val compound = NbtCompound()
-			compound.putString("text", Text.Serializer.toJson(iota.display()))
-			dataTracker.set(stateDataTracker, compound)
+			val compound = CompoundTag()
+			compound.putString("text", Component.Serializer.toJson(iota.display()))
+			entityData.set(stateDataTracker, compound)
 		}
 	}
 
 	override fun processState() {
-		val raw = dataTracker.get(stateDataTracker)
+		val raw = entityData.get(stateDataTracker)
 		if (raw.contains("text")) {
 			this.clientIsText = true
-			this.clientText = Text.Serializer.fromJson(raw.getString("text"))!!
+			this.clientText = Component.Serializer.fromJson(raw.getString("text"))!!
 		} else {
 			this.clientIsText = false
 			this.clientVerts = RenderUtils.getNormalizedStrokes(HexPattern.fromNBT(raw))

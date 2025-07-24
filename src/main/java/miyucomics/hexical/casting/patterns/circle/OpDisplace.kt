@@ -10,8 +10,8 @@ import at.petrak.hexcasting.api.casting.getVec3
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.circle.MishapNoSpellCircle
 import miyucomics.hexical.casting.mishaps.OutsideCircleMishap
-import net.minecraft.entity.Entity
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.phys.Vec3
 
 class OpDisplace : SpellAction {
 	override val argc = 2
@@ -23,7 +23,7 @@ class OpDisplace : SpellAction {
 		val bounds = circle.executionState!!.bounds
 
 		val entity = args.getEntity(0, argc)
-		if (!bounds.contains(entity.pos))
+		if (!bounds.contains(entity.position()))
 			throw OutsideCircleMishap()
 
 		val destination = args.getVec3(1, argc)
@@ -33,9 +33,9 @@ class OpDisplace : SpellAction {
 		return SpellAction.Result(Spell(entity, destination), 0, listOf(ParticleSpray.burst(destination, 1.0)))
 	}
 
-	private data class Spell(val entity: Entity, val destination: Vec3d) : RenderedSpell {
+	private data class Spell(val entity: Entity, val destination: Vec3) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			entity.teleport(destination.x, destination.y, destination.z)
+			entity.teleportTo(destination.x, destination.y, destination.z)
 		}
 	}
 }

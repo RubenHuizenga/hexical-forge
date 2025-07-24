@@ -6,40 +6,40 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.casting.mishaps.MishapNotEnoughArgs
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import at.petrak.hexcasting.api.utils.putCompound
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.text.Style
-import net.minecraft.text.Text
-import net.minecraft.util.math.Vec3d
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.network.chat.Style
+import net.minecraft.network.chat.Component
+import net.minecraft.world.phys.Vec3
 
 class PigmentIota(pigment: FrozenPigment) : Iota(TYPE, pigment) {
 	override fun isTruthy() = true
 	val pigment: FrozenPigment = this.payload as FrozenPigment
 	override fun toleratesOther(that: Iota) = typesMatch(this, that) && this.pigment == (that as PigmentIota).pigment
 
-	override fun serialize(): NbtElement {
-		val compound = NbtCompound()
+	override fun serialize(): Tag {
+		val compound = CompoundTag()
 		compound.putCompound("pigment", pigment.serializeToNBT())
-		compound.putString("name", pigment.item.translationKey)
+		compound.putString("name", pigment.item.getDescriptionId())
 		return compound
 	}
 
 	companion object {
 		var TYPE: IotaType<PigmentIota> = object : IotaType<PigmentIota>() {
 			override fun color() = 0xff_c466e3.toInt()
-			override fun deserialize(tag: NbtElement, world: ServerWorld) = PigmentIota(FrozenPigment.fromNBT((tag as NbtCompound).getCompound("pigment")))
-			override fun display(tag: NbtElement): Text {
-				val compound = tag as NbtCompound
+			override fun deserialize(tag: Tag, world: ServerLevel) = PigmentIota(FrozenPigment.fromNBT((tag as CompoundTag).getCompound("pigment")))
+			override fun display(tag: Tag): Component {
+				val compound = tag as CompoundTag
 				val colorizer = FrozenPigment.fromNBT(compound.getCompound("pigment"))
-				val name = Text.translatable(compound.getString("name")).string
+				val name = Component.translatable(compound.getString("name")).string
 
-				val display = Text.literal("")
+				val display = Component.literal("")
 				val steps = name.length
 				for (i in 0 until steps) {
 					val progress = i.toFloat() / steps.toFloat()
-					val color = colorizer.colorProvider.getColor(0f, Vec3d(0.0, (-4 + progress * 8).toDouble(), 0.0))
-					display.append(Text.literal(name[i].toString()).styled { style: Style -> style.withColor(color) })
+					val color = colorizer.colorProvider.getColor(0f, Vec3(0.0, (-4 + progress * 8).toDouble(), 0.0))
+					display.append(Component.literal(name[i].toString()).withStyle { style: Style -> style.withColor(color) })
 				}
 
 				return display

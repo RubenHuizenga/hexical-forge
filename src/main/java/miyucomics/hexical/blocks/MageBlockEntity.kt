@@ -5,11 +5,12 @@ import at.petrak.hexcasting.api.casting.getPositiveInt
 import at.petrak.hexcasting.api.casting.getPositiveIntUnder
 import at.petrak.hexcasting.api.casting.iota.Iota
 import miyucomics.hexical.registry.HexicalBlocks
-import net.minecraft.block.BlockState
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.block.entity.BlockEntity
 
-class MageBlockEntity(pos: BlockPos, state: BlockState) : HexBlockEntity(HexicalBlocks.MAGE_BLOCK_ENTITY, pos, state) {
+class MageBlockEntity(pos: BlockPos, state: BlockState) : HexBlockEntity(HexicalBlocks.MAGE_BLOCK_ENTITY.get(), pos, state) {
 	var properties: MutableMap<String, Boolean> = mutableMapOf(
 		"bouncy" to false,
 		"energized" to false,
@@ -21,13 +22,13 @@ class MageBlockEntity(pos: BlockPos, state: BlockState) : HexBlockEntity(Hexical
 	var redstone: Int = 0
 	var lifespan: Int = 0
 
-	override fun saveModData(tag: NbtCompound) {
+	override fun saveModData(tag: CompoundTag) {
 		properties.forEach { (key, value) -> tag.putBoolean(key, value) }
 		tag.putInt("lifespan", this.lifespan)
 		tag.putInt("redstone", this.redstone)
 	}
 
-	override fun loadModData(tag: NbtCompound) {
+	override fun loadModData(tag: CompoundTag) {
 		properties.keys.forEach { key -> properties[key] = tag.getBoolean(key) }
 		this.lifespan = tag.getInt("lifespan")
 		this.redstone = tag.getInt("redstone")

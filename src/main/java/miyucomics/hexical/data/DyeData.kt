@@ -3,15 +3,18 @@ package miyucomics.hexical.data
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import miyucomics.hexical.HexicalMain
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener
-import net.minecraft.block.Block
-import net.minecraft.block.BlockState
-import net.minecraft.item.Item
-import net.minecraft.registry.Registries
-import net.minecraft.resource.ResourceManager
-import net.minecraft.resource.ResourceType
-import net.minecraft.util.Identifier
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.item.Item
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.event.AddReloadListenerEvent
+import net.minecraft.server.packs.resources.ResourceManager
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener
+import net.minecraft.server.packs.PackType
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.profiling.ProfilerFiller
 import java.io.InputStream
 import java.io.InputStreamReader
 
@@ -21,31 +24,46 @@ object DyeData {
 	private val blockFamilies = HashMap<String, MutableMap<String, String>>()
 	private val itemFamilies = HashMap<String, MutableMap<String, String>>()
 
-	fun init() {
-		ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(object :
-			SimpleSynchronousResourceReloadListener {
-			override fun getFabricId() = HexicalMain.id("dyes")
-			override fun reload(manager: ResourceManager) = manager.findResources("dyes") { path -> path.path.endsWith(".json") }.keys.forEach { id -> loadData(manager.getResource(id).get().inputStream) }
-		})
-	}
+    @Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+    object ReloadListener {
+        @SubscribeEvent
+        fun onAddReloadListeners(event: AddReloadListenerEvent) {
+            event.addListener(object : SimplePreparableReloadListener<Unit>() {
+                override fun prepare(manager: ResourceManager, profiler: ProfilerFiller): Unit = Unit
 
-	fun isDyeable(block: Block): Boolean = flatBlockLookup.containsKey(Registries.BLOCK.getId(block).toString())
-	fun isDyeable(item: Item): Boolean = flatItemLookup.containsKey(Registries.ITEM.getId(item).toString())
-	fun getDye(block: Block): String? = flatBlockLookup[Registries.BLOCK.getId(block).toString()]
-	fun getDye(item: Item): String? = flatItemLookup[Registries.ITEM.getId(item).toString()]
+                override fun apply(prepared: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
+                    flatBlockLookup.clear()
+                    flatItemLookup.clear()
+                    blockFamilies.clear()
+                    itemFamilies.clear()
+
+                    manager.listResources("dyes") { loc -> loc.path.endsWith(".json") }.forEach { (id, resource) ->
+                        resource.open().use { stream ->
+                            loadData(stream)
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+	fun isDyeable(block: Block): Boolean = flatBlockLookup.containsKey(ForgeRegistries.BLOCKS.getKey(block).toString())
+	fun isDyeable(item: Item): Boolean = flatItemLookup.containsKey(ForgeRegistries.ITEMS.getKey(item).toString())
+	fun getDye(block: Block): String? = flatBlockLookup[ForgeRegistries.BLOCKS.getKey(block).toString()]
+	fun getDye(item: Item): String? = flatItemLookup[ForgeRegistries.ITEMS.getKey(item).toString()]
 
 	fun getNewBlock(block: Block, dye: String): BlockState {
 		blockFamilies.forEach { (_, family) ->
-			if (family.containsValue(Registries.BLOCK.getId(block).toString()) && family.containsKey(dye))
-				return Registries.BLOCK.get(Identifier(family[dye])).defaultState
+			if (family.containsValue(ForgeRegistries.BLOCKS.getKey(block).toString()) && family.containsKey(dye))
+				return ForgeRegistries.BLOCKS.getValue(ResourceLocation(family[dye]!!))!!.defaultBlockState()
 		}
-		return block.defaultState
+		return block.defaultBlockState()
 	}
 
 	fun getNewItem(item: Item, dye: String): Item {
 		itemFamilies.forEach { (_, family) ->
-			if (family.containsValue(Registries.ITEM.getId(item).toString()) && family.containsKey(dye))
-				return Registries.ITEM.get(Identifier(family[dye]))
+			if (family.containsValue(ForgeRegistries.ITEMS.getKey(item).toString()) && family.containsKey(dye))
+				return ForgeRegistries.ITEMS.getValue(ResourceLocation(family[dye]!!))!!
 		}
 		return item
 	}

@@ -5,20 +5,20 @@ import at.petrak.hexcasting.api.casting.iota.IotaType
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.casting.mishaps.MishapNotEnoughArgs
 import at.petrak.hexcasting.api.utils.styledWith
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.text.Style
-import net.minecraft.text.Text
-import net.minecraft.util.DyeColor
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.network.chat.Style
+import net.minecraft.network.chat.Component
+import net.minecraft.world.item.DyeColor
 
 class DyeIota(color: String) : Iota(TYPE, color) {
 	override fun isTruthy() = true
 	val dye: String = this.payload as String
 	override fun toleratesOther(that: Iota) = (typesMatch(this, that) && that is DyeIota) && this.dye == that.dye
 
-	override fun serialize(): NbtElement {
-		val compound = NbtCompound()
+	override fun serialize(): Tag {
+		val compound = CompoundTag()
 		compound.putString("color", dye)
 		return compound
 	}
@@ -46,10 +46,10 @@ class DyeIota(color: String) : Iota(TYPE, color) {
 
 		var TYPE: IotaType<DyeIota> = object : IotaType<DyeIota>() {
 			override fun color() = 0xff_ffffff.toInt()
-			override fun deserialize(tag: NbtElement, world: ServerWorld) = DyeIota((tag as NbtCompound).getString("color"))
-			override fun display(tag: NbtElement): Text {
-				val color = (tag as NbtCompound).getString("color")
-				return Text.literal(color.replace("_", " ")).styledWith(Style.EMPTY.withColor(MAP[color]!!))
+			override fun deserialize(tag: Tag, world: ServerLevel) = DyeIota((tag as CompoundTag).getString("color"))
+			override fun display(tag: Tag): Component {
+				val color = (tag as CompoundTag).getString("color")
+				return Component.literal(color.replace("_", " ")).styledWith(Style.EMPTY.withColor(MAP[color]!!))
 			}
 		}
 	}

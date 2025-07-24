@@ -12,9 +12,10 @@ import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.data.prestidigitation.PrestidigitationData
-import net.minecraft.entity.Entity
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.Entity
+import net.minecraft.core.BlockPos
+import net.minecraft.world.phys.Vec3
+import thedarkcolour.kotlinforforge.forge.registerObject
 
 class OpPrestidigitation : SpellAction {
 	override val argc = 1
@@ -23,12 +24,12 @@ class OpPrestidigitation : SpellAction {
 			is EntityIota -> {
 				val entity = args.getEntity(0, argc)
 				env.assertEntityInRange(entity)
-				SpellAction.Result(EntitySpell(entity), MediaConstants.DUST_UNIT / 10, listOf(ParticleSpray.cloud(entity.pos, 1.0)))
+				SpellAction.Result(EntitySpell(entity), MediaConstants.DUST_UNIT / 10, listOf(ParticleSpray.cloud(entity.position(), 1.0)))
 			}
 			is Vec3Iota -> {
 				val position = args.getBlockPos(0, argc)
 				env.assertPosInRange(position)
-				SpellAction.Result(BlockSpell(position), MediaConstants.DUST_UNIT / 10, listOf(ParticleSpray.cloud(Vec3d.ofCenter(position), 1.0)))
+				SpellAction.Result(BlockSpell(position), MediaConstants.DUST_UNIT / 10, listOf(ParticleSpray.cloud(Vec3.atCenterOf(position), 1.0)))
 			}
 			else -> throw MishapInvalidIota.of(args[0], 0, "entity_or_vector")
 		}
@@ -36,8 +37,8 @@ class OpPrestidigitation : SpellAction {
 
 	private data class BlockSpell(val position: BlockPos) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			PrestidigitationData.PRESTIDIGITATION_HANDLER.forEach {
-				if (it.tryHandleBlock(env, position))
+			PrestidigitationData.DEFERRED_REGISTER.entries.forEach {
+				if (it.get().tryHandleBlock(env, position))
 					return
 			}
 		}
@@ -45,8 +46,8 @@ class OpPrestidigitation : SpellAction {
 
 	private data class EntitySpell(val entity: Entity) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			PrestidigitationData.PRESTIDIGITATION_HANDLER.forEach {
-				if (it.tryHandleEntity(env, entity))
+			PrestidigitationData.DEFERRED_REGISTER.entries.forEach {
+				if (it.get().tryHandleEntity(env, entity))
 					return
 			}
 		}

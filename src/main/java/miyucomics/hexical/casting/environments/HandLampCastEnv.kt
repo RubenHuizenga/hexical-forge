@@ -6,17 +6,17 @@ import at.petrak.hexcasting.api.casting.iota.IotaType
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import at.petrak.hexcasting.api.utils.putCompound
 import at.petrak.hexcasting.xplat.IXplatAbstractions
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.util.Hand
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionHand
 
-class HandLampCastEnv(caster: ServerPlayerEntity, castingHand: Hand, finale: Boolean, private val stack: ItemStack) : LampCastEnv(caster, castingHand, finale) {
+class HandLampCastEnv(caster: ServerPlayer, castingHand: InteractionHand, finale: Boolean, private val stack: ItemStack) : LampCastEnv(caster, castingHand, finale) {
 	override fun produceParticles(particles: ParticleSpray, pigment: FrozenPigment) {}
 
-	override fun getCastingHand(): Hand = this.castingHand
+	override fun getCastingHand(): InteractionHand = this.castingHand
 	override fun getPigment(): FrozenPigment = IXplatAbstractions.INSTANCE.getPigment(this.caster)
 
 	fun setInternalIota(iota: Iota) {
-		stack.orCreateNbt.putCompound("storage", IotaType.serialize(iota))
+		stack.orCreateTag.putCompound("storage", IotaType.serialize(iota))
 	}
 }

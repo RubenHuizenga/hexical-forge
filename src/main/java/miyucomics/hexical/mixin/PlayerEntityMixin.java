@@ -6,11 +6,11 @@ import miyucomics.hexical.data.EvokeState;
 import miyucomics.hexical.data.LesserSentinelState;
 import miyucomics.hexical.interfaces.PlayerEntityMinterface;
 import miyucomics.hexical.utils.CastingUtils;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -19,14 +19,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public class PlayerEntityMixin implements PlayerEntityMinterface {
 	@Unique
 	private boolean hexical$archLampCastedThisTick = false;
 	@Unique
 	private ArchLampState hexical$archLampState = new ArchLampState();
 	@Unique
-	private NbtCompound hexical$evocation = new NbtCompound();
+	private CompoundTag hexical$evocation = new CompoundTag();
 	@Unique
 	private ItemStack hexical$wristpocket = ItemStack.EMPTY;
 	@Unique
@@ -34,20 +34,20 @@ public class PlayerEntityMixin implements PlayerEntityMinterface {
 
 	@Inject(method = "tick", at = @At("TAIL"))
 	void tick(CallbackInfo ci) {
-		PlayerEntity player = ((PlayerEntity) (Object) this);
+		Player player = ((Player) (Object) this);
 
-		if (player.getWorld().isClient)
+		if (player.level().isClientSide)
 			return;
 
-		if (EvokeState.isEvoking(player.getUuid()) && CastingUtils.isEnlightened((ServerPlayerEntity) player))
-			if (EvokeState.getDuration(player.getUuid()) == 0)
-				OpSetEvocation.evoke((ServerPlayerEntity) player);
+		if (EvokeState.isEvoking(player.getUUID()) && CastingUtils.isEnlightened((ServerPlayer) player))
+			if (EvokeState.getDuration(player.getUUID()) == 0)
+				OpSetEvocation.evoke((ServerPlayer) player);
 
 		hexical$archLampCastedThisTick = false;
 	}
 
-	@Inject(method = "readCustomDataFromNbt", at = @At("HEAD"))
-	void reaadPlayerData(NbtCompound compound, CallbackInfo ci) {
+	@Inject(method = "readAdditionalSaveData", at = @At("HEAD"))
+	void reaadPlayerData(CompoundTag compound, CallbackInfo ci) {
 		if (compound.contains("arch_lamp"))
 			hexical$archLampState = ArchLampState.createFromNbt(compound.getCompound("arch_lamp"));
 
@@ -55,21 +55,21 @@ public class PlayerEntityMixin implements PlayerEntityMinterface {
 			hexical$evocation = compound.getCompound("evocation");
 
 		if (compound.contains("lesser_sentinels"))
-			hexical$lesserSentinels = LesserSentinelState.createFromNbt(compound.getList("lesser_sentinels", NbtElement.COMPOUND_TYPE));
+			hexical$lesserSentinels = LesserSentinelState.createFromNbt(compound.getList("lesser_sentinels", Tag.TAG_COMPOUND));
 
-		hexical$wristpocket = ItemStack.fromNbt(compound.getCompound("wristpocket"));
+		hexical$wristpocket = ItemStack.of(compound.getCompound("wristpocket"));
 	}
 
-	@Inject(method = "writeCustomDataToNbt", at = @At("HEAD"))
-	void writePlayerData(NbtCompound nbtCompound, CallbackInfo ci) {
+	@Inject(method = "addAdditionalSaveData", at = @At("HEAD"))
+	void writePlayerData(CompoundTag nbtCompound, CallbackInfo ci) {
 		nbtCompound.put("arch_lamp", hexical$archLampState.toNbt());
 		nbtCompound.put("lesser_sentinels", hexical$lesserSentinels.toNbt());
 
 		if (hexical$evocation != null)
 			nbtCompound.put("evocation", hexical$evocation);
 
-		NbtCompound wristpocket = new NbtCompound();
-		hexical$wristpocket.writeNbt(wristpocket);
+		CompoundTag wristpocket = new CompoundTag();
+		hexical$wristpocket.save(wristpocket);
 		nbtCompound.put("wristpocket", wristpocket);
 	}
 
@@ -98,12 +98,12 @@ public class PlayerEntityMixin implements PlayerEntityMinterface {
 	}
 
 	@Override
-	public @NotNull NbtCompound getEvocation() {
+	public @NotNull CompoundTag getEvocation() {
 		return hexical$evocation;
 	}
 
 	@Override
-	public void setEvocation(@NotNull NbtCompound hex) {
+	public void setEvocation(@NotNull CompoundTag hex) {
 		hexical$evocation = hex;
 	}
 

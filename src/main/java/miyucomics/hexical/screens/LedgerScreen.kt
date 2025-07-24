@@ -3,15 +3,14 @@ package miyucomics.hexical.screens
 import miyucomics.hexical.client.ClientStorage
 import miyucomics.hexical.data.LedgerInstance
 import miyucomics.hexical.registry.HexicalNetworking
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.gui.screen.Screen
-import net.minecraft.text.Text
+import net.minecraftforge.network.PacketDistributor
+import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.screens.Screen
+import net.minecraft.network.chat.Component
 
-class LedgerScreen : Screen(Text.literal("Ledger")) {
+class LedgerScreen : Screen(Component.literal("Ledger")) {
 	private val patternWidgets: MutableList<DisplayWidget> = mutableListOf()
-	override fun shouldPause() = false
+	override fun isPauseScreen() = false
 
 	override fun init() {
 		val padding = 20
@@ -19,8 +18,8 @@ class LedgerScreen : Screen(Text.literal("Ledger")) {
 		val widthPermitted = width - 2 * padding
 		val panelWidth = widthPermitted / 2 - padding
 
-		addDrawable(StackWidget(padding, padding, panelWidth, heightPermitted))
-		addDrawable(MishapWidget(width / 2 + padding, padding * 2 + heightPermitted / 2, panelWidth, heightPermitted / 2 - padding))
+		addRenderableOnly(StackWidget(padding, padding, panelWidth, heightPermitted))
+		addRenderableOnly(MishapWidget(width / 2 + padding, padding * 2 + heightPermitted / 2, panelWidth, heightPermitted / 2 - padding))
 
 		patternWidgets.clear()
 		val ledgerData = ClientStorage.ledger.patterns.buffer()
@@ -33,7 +32,7 @@ class LedgerScreen : Screen(Text.literal("Ledger")) {
 				padding + y.toInt()
 			)
 			patternWidgets.add(widget)
-			addDrawable(widget)
+			addRenderableOnly(widget)
 		}
 	}
 
@@ -43,17 +42,17 @@ class LedgerScreen : Screen(Text.literal("Ledger")) {
 			patternWidgets[i].setPattern(ledgerData.getOrNull(i))
 	}
 
-	override fun render(drawContext: DrawContext, i: Int, j: Int, f: Float) {
+	override fun render(drawContext: GuiGraphics, i: Int, j: Int, f: Float) {
 		drawContext.fillGradient(0, 0, this.width, this.height, -1072689136, -804253680)
-		drawContext.drawBorder(width / 2, 0, 1, height, (0xffffffff).toInt())
-		drawContext.drawBorder(width / 2, height / 2, width / 2, 1, (0xffffffff).toInt())
+		drawContext.renderOutline(width / 2, 0, 1, height, (0xffffffff).toInt())
+		drawContext.renderOutline(width / 2, height / 2, width / 2, 1, (0xffffffff).toInt())
 		super.render(drawContext, i, j, f)
 	}
 
 	override fun mouseClicked(mouseX: Double, mouseY: Double, type: Int): Boolean {
 		patternWidgets.forEach { widget ->
-			if (mouseX >= widget.x && mouseY >= widget.y && mouseX < widget.x + widget.width && mouseY < widget.y + widget.height) {
-				ClientPlayNetworking.send(HexicalNetworking.LEDGER_CHANNEL, PacketByteBufs.empty())
+			if (mouseX >= widget.x && mouseY >= widget.y && mouseX < widget.x + widget.width && mouseY < widget.y + widget.height) {				
+				HexicalNetworking.sendToServer(HexicalNetworking.LedgerPacket(null))
 				ClientStorage.ledger = LedgerInstance()
 				return true
 			}

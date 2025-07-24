@@ -5,51 +5,51 @@ import at.petrak.hexcasting.api.utils.putCompound
 import at.petrak.hexcasting.api.utils.putList
 import dev.kosmx.playerAnim.core.util.Vec3f
 import miyucomics.hexical.registry.HexicalEntities
-import net.minecraft.entity.EntityType
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.nbt.NbtFloat
-import net.minecraft.nbt.NbtList
-import net.minecraft.util.math.Vec3d
-import net.minecraft.world.World
+import net.minecraft.world.entity.EntityType
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import net.minecraft.nbt.FloatTag
+import net.minecraft.nbt.ListTag
+import net.minecraft.world.phys.Vec3
+import net.minecraft.world.level.Level
 
-class MeshEntity(entityType: EntityType<out MeshEntity>, world: World) : BaseSpecklike(entityType, world) {
-	constructor(world: World) : this(HexicalEntities.MESH_ENTITY, world)
+class MeshEntity(entityType: EntityType<out MeshEntity>, world: Level) : BaseSpecklike(entityType, world) {
+	constructor(world: Level) : this(HexicalEntities.MESH_ENTITY.get(), world)
 
 	var clientVertices: MutableList<Vec3f> = mutableListOf()
 
-	override fun readCustomDataFromNbt(nbt: NbtCompound) {
-		super.readCustomDataFromNbt(nbt)
-		dataTracker.set(stateDataTracker, nbt.getCompound("shape"))
+	override fun readAdditionalSaveData(nbt: CompoundTag) {
+		super.readAdditionalSaveData(nbt)
+		entityData.set(stateDataTracker, nbt.getCompound("shape"))
 	}
 
-	override fun writeCustomDataToNbt(nbt: NbtCompound) {
-		super.writeCustomDataToNbt(nbt)
-		nbt.putCompound("shape", dataTracker.get(stateDataTracker))
+	override fun addAdditionalSaveData(nbt: CompoundTag) {
+		super.addAdditionalSaveData(nbt)
+		nbt.putCompound("shape", entityData.get(stateDataTracker))
 	}
 
 	fun getShape(): List<Vec3Iota> {
-		val list = dataTracker.get(stateDataTracker).getList("shape", NbtElement.FLOAT_TYPE.toInt())
+		val list = entityData.get(stateDataTracker).getList("shape", Tag.TAG_FLOAT.toInt())
 		val deserializedVertices = mutableListOf<Vec3Iota>()
 		for (i in 0 until (list.size / 3))
-			deserializedVertices.add(Vec3Iota(Vec3d(list.getFloat(3 * i).toDouble(), list.getFloat(3 * i + 1).toDouble(), list.getFloat(3 * i + 2).toDouble())))
+			deserializedVertices.add(Vec3Iota(Vec3(list.getFloat(3 * i).toDouble(), list.getFloat(3 * i + 1).toDouble(), list.getFloat(3 * i + 2).toDouble())))
 		return deserializedVertices
 	}
 
 	fun setShape(shape: List<Vec3f>) {
-		val compound = NbtCompound()
-		val list = NbtList()
+		val compound = CompoundTag()
+		val list = ListTag()
 		for (vertex in shape) {
-			list.add(NbtFloat.of(vertex.x))
-			list.add(NbtFloat.of(vertex.y))
-			list.add(NbtFloat.of(vertex.z))
+			list.add(FloatTag.valueOf(vertex.x))
+			list.add(FloatTag.valueOf(vertex.y))
+			list.add(FloatTag.valueOf(vertex.z))
 		}
 		compound.putList("shape", list)
-		this.dataTracker.set(stateDataTracker, compound)
+		this.entityData.set(stateDataTracker, compound)
 	}
 
 	override fun processState() {
-		val list = this.dataTracker.get(stateDataTracker).getList("shape", NbtElement.FLOAT_TYPE.toInt())
+		val list = this.entityData.get(stateDataTracker).getList("shape", Tag.TAG_FLOAT.toInt())
 		this.clientVertices = mutableListOf()
 		for (i in 0 until (list.size / 3))
 			clientVertices.add(Vec3f(list.getFloat(3 * i), list.getFloat(3 * i + 1), list.getFloat(3 * i + 2)))

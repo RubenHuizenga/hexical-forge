@@ -11,14 +11,14 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.registry.HexicalBlocks
 import miyucomics.hexpose.iotas.getIdentifier
-import net.minecraft.block.Block
-import net.minecraft.block.FlowerPotBlock
-import net.minecraft.block.TallPlantBlock
-import net.minecraft.registry.Registries
-import net.minecraft.registry.tag.BlockTags
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.*
+import net.minecraft.world.level.block.DoublePlantBlock
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.world.phys.Vec3
+import net.minecraft.tags.BlockTags
 
 class OpConjureFlower : SpellAction {
 	override val argc = 2
@@ -27,40 +27,40 @@ class OpConjureFlower : SpellAction {
 		env.assertPosInRange(position)
 
 		val id = args.getIdentifier(1, argc)
-		if (!Registries.BLOCK.containsId(id))
+		if (!ForgeRegistries.BLOCKS.containsKey(id))
 			throw MishapInvalidIota.of(args[1], 0, "conjurable_flower_id")
-		val type = Registries.BLOCK.get(id)
-		if (!type.defaultState.isIn(HexicalBlocks.CONJURABLE_FLOWERS))
+		val type = ForgeRegistries.BLOCKS.getValue(id)!!
+		if (!type.defaultBlockState().`is`(HexicalBlocks.CONJURABLE_FLOWERS))
 			throw MishapInvalidIota.of(args[1], 0, "conjurable_flower_id")
 
-		if (env.world.getBlockState(position).isIn(BlockTags.FLOWER_POTS))
-			return SpellAction.Result(PotPlant(position, type), MediaConstants.DUST_UNIT / 4, listOf(ParticleSpray.cloud(Vec3d.ofCenter(position), 1.0)))
+		if (env.world.getBlockState(position).`is`(BlockTags.FLOWER_POTS))
+			return SpellAction.Result(PotPlant(position, type), MediaConstants.DUST_UNIT / 4, listOf(ParticleSpray.cloud(Vec3.atCenterOf(position), 1.0)))
 
-		if (!env.world.getBlockState(position).isReplaceable)
+		if (!env.world.getBlockState(position).canBeReplaced())
 			throw MishapBadBlock.of(position, "flower_spawnable")
-		if (type.defaultState.properties.contains(TallPlantBlock.HALF) && !env.world.getBlockState(position.up()).isReplaceable)
-			throw MishapBadBlock.of(position.up(), "flower_spawnable")
-		if (!env.world.getBlockState(position.down()).isSideSolidFullSquare(env.world, position.down(), Direction.UP))
-			throw MishapBadBlock.of(position.down(), "solid_platform")
+		if (type.defaultBlockState().properties.contains(DoublePlantBlock.HALF) && !env.world.getBlockState(position.above()).canBeReplaced())
+			throw MishapBadBlock.of(position.above(), "flower_spawnable")
+		if (!env.world.getBlockState(position.below()).isFaceSturdy(env.world, position.below(), Direction.UP))
+			throw MishapBadBlock.of(position.below(), "solid_platform")
 
-		return SpellAction.Result(GroundPlant(position, type), MediaConstants.DUST_UNIT / 4, listOf(ParticleSpray.cloud(Vec3d.ofCenter(position), 1.0)))
+		return SpellAction.Result(GroundPlant(position, type), MediaConstants.DUST_UNIT / 4, listOf(ParticleSpray.cloud(Vec3.atCenterOf(position), 1.0)))
 	}
 
 	private data class GroundPlant(val position: BlockPos, val flower: Block) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			if (flower is TallPlantBlock) {
-				TallPlantBlock.placeAt(env.world, flower.defaultState, position, Block.NOTIFY_LISTENERS or Block.FORCE_STATE)
+			if (flower is DoublePlantBlock) {
+				DoublePlantBlock.placeAt(env.world, flower.defaultBlockState(), position, Block.UPDATE_CLIENTS or Block.UPDATE_KNOWN_SHAPE)
 			}
 			else {
-				env.world.setBlockState(position, flower.defaultState)
+				env.world.setBlockAndUpdate(position, flower.defaultBlockState())
 			}
 		}
 	}
 
 	private data class PotPlant(val position: BlockPos, val flower: Block) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val pot = FlowerPotBlock.CONTENT_TO_POTTED[flower] ?: return
-			env.world.setBlockState(position, pot.defaultState)
+			val pot = FlowerPotBlock.POTTED_BY_CONTENT[flower] ?: return
+			env.world.setBlockAndUpdate(position, pot.defaultBlockState())
 		}
 	}
 }

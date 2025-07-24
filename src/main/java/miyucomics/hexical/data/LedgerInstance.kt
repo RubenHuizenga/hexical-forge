@@ -4,20 +4,20 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.math.HexPattern
 import at.petrak.hexcasting.api.utils.putList
 import miyucomics.hexical.utils.RingBuffer
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtList
-import net.minecraft.nbt.NbtString
-import net.minecraft.network.PacketByteBuf
-import net.minecraft.text.Text
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.StringTag
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.chat.Component
+import io.netty.buffer.Unpooled
 
 class LedgerInstance {
 	var patterns: RingBuffer<HexPattern> = RingBuffer(32)
-	var stack: RingBuffer<Text> = RingBuffer(16)
-	var mishap: Text = Text.empty()
+	var stack: RingBuffer<Component> = RingBuffer(16)
+	var mishap: Component = Component.empty()
 	var active = true
 
-	fun saveMishap(text: Text) {
+	fun saveMishap(text: Component) {
 		mishap = text
 	}
 
@@ -30,34 +30,28 @@ class LedgerInstance {
 		iotas.forEach { iota -> stack.add(iota.display()) }
 	}
 
-	fun toNbt(): NbtCompound {
-		val tag = NbtCompound()
+	fun toNbt(): CompoundTag {
+		val tag = CompoundTag()
 
-		val nbtLedger = NbtList()
+		val nbtLedger = ListTag()
 		patterns.buffer().forEach { pattern -> nbtLedger.add(pattern.serializeToNBT()) }
 		tag.putList("ledger", nbtLedger)
 
-		val nbtStack = NbtList()
-		stack.buffer().forEach { iota -> nbtStack.add(NbtString.of(Text.Serializer.toJson(iota))) }
+		val nbtStack = ListTag()
+		stack.buffer().forEach { iota -> nbtStack.add(StringTag.valueOf(Component.Serializer.toJson(iota))) }
 		tag.putList("stack", nbtStack)
 
-		tag.putString("mishap", Text.Serializer.toJson(mishap))
+		tag.putString("mishap", Component.Serializer.toJson(mishap))
 
 		return tag
 	}
 
-	fun toPacket(): PacketByteBuf {
-		val buf = PacketByteBufs.create()
-		buf.writeNbt(this.toNbt())
-		return buf
-	}
-
 	companion object {
-		fun createFromNbt(tag: NbtCompound): LedgerInstance {
+		fun createFromNbt(tag: CompoundTag): LedgerInstance {
 			val state = LedgerInstance()
-			tag.getList("ledger", NbtCompound.COMPOUND_TYPE.toInt()).forEach { pattern -> state.patterns.add(HexPattern.fromNBT(pattern as NbtCompound)) }
-			tag.getList("stack", NbtCompound.STRING_TYPE.toInt()).forEach { iota -> state.stack.add(Text.Serializer.fromJson((iota as NbtString).asString())!!) }
-			state.mishap = Text.Serializer.fromJson(tag.getString("mishap"))!!
+			tag.getList("ledger", CompoundTag.TAG_COMPOUND.toInt()).forEach { pattern -> state.patterns.add(HexPattern.fromNBT(pattern as CompoundTag)) }
+			tag.getList("stack", CompoundTag.TAG_STRING.toInt()).forEach { iota -> state.stack.add(Component.Serializer.fromJson((iota as StringTag).getAsString())!!) }
+			state.mishap = Component.Serializer.fromJson(tag.getString("mishap"))!!
 			return state
 		}
 	}

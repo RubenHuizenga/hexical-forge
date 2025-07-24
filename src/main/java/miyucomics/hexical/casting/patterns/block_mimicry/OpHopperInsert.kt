@@ -9,13 +9,13 @@ import at.petrak.hexcasting.api.casting.getItemEntity
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import net.minecraft.entity.ItemEntity
-import net.minecraft.inventory.Inventory
-import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.world.World
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.Container
+import net.minecraft.world.WorldlyContainer
+import net.minecraft.world.item.ItemStack
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.world.level.Level
 import kotlin.math.min
 
 class OpHopperInsert : SpellAction {
@@ -28,36 +28,36 @@ class OpHopperInsert : SpellAction {
 		env.assertPosInRange(position)
 
 		val dirRaw = args.getBlockPos(2, argc)
-		val direction = Direction.fromVector(dirRaw.x, dirRaw.y, dirRaw.z) ?: throw MishapInvalidIota.of(args[2], 0, "axis_vector")
+		val direction = Direction.fromDelta(dirRaw.x, dirRaw.y, dirRaw.z) ?: throw MishapInvalidIota.of(args[2], 0, "axis_vector")
 
-		return SpellAction.Result(Spell(item, position, direction), MediaConstants.DUST_UNIT, listOf(ParticleSpray.burst(item.pos, 1.0), ParticleSpray.burst(position.toCenterPos(), 1.0)))
+		return SpellAction.Result(Spell(item, position, direction), MediaConstants.DUST_UNIT, listOf(ParticleSpray.burst(item.position(), 1.0), ParticleSpray.burst(position.getCenter(), 1.0)))
 	}
 
 	private data class Spell(val item: ItemEntity, val position: BlockPos, val direction: Direction) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val new = insert(env.world, position, direction, item.stack)
-			item.stack = new
+			val new = insert(env.world, position, direction, item.item)
+			item.item = new
 		}
 	}
 
 	companion object {
-		fun insert(world: World, targetPos: BlockPos, fromDirection: Direction, stack: ItemStack): ItemStack {
+		fun insert(world: Level, targetPos: BlockPos, fromDirection: Direction, stack: ItemStack): ItemStack {
 			var mutableStack = stack
 			if (mutableStack.isEmpty)
 				return mutableStack
 
 			val blockEntity = world.getBlockEntity(targetPos)
-			if (blockEntity !is Inventory)
+			if (blockEntity !is Container)
 				return mutableStack
 
-			if (blockEntity is SidedInventory) {
-				for (slot in blockEntity.getAvailableSlots(fromDirection)) {
+			if (blockEntity is WorldlyContainer) {
+				for (slot in blockEntity.getSlotsForFace(fromDirection)) {
 					mutableStack = insertIntoSlot(blockEntity, slot, mutableStack)
 					if (mutableStack.isEmpty)
 						return ItemStack.EMPTY
 				}
 			} else {
-				for (slot in 0 until blockEntity.size()) {
+				for (slot in 0 until blockEntity.getContainerSize()) {
 					mutableStack = insertIntoSlot(blockEntity, slot, mutableStack)
 					if (mutableStack.isEmpty)
 						return ItemStack.EMPTY
@@ -67,28 +67,28 @@ class OpHopperInsert : SpellAction {
 			return mutableStack
 		}
 
-		private fun insertIntoSlot(inventory: Inventory, slot: Int, stack: ItemStack): ItemStack {
-			val targetStack = inventory.getStack(slot)
-			if (!inventory.isValid(slot, stack))
+		private fun insertIntoSlot(inventory: Container, slot: Int, stack: ItemStack): ItemStack {
+			val targetStack = inventory.getItem(slot)
+			if (!inventory.canPlaceItem(slot, stack))
 				return stack
 
 			if (targetStack.isEmpty) {
-				inventory.setStack(slot, stack.copy())
+				inventory.setItem(slot, stack.copy())
 				stack.count = 0
-				inventory.markDirty()
+				inventory.setChanged()
 				return ItemStack.EMPTY
 			}
 
-			if (!ItemStack.canCombine(stack, targetStack))
+			if (!ItemStack.isSameItemSameTags(stack, targetStack))
 				return stack
 
-			val maxInsert = min(stack.count, targetStack.maxCount - targetStack.count)
+			val maxInsert = min(stack.count, targetStack.maxStackSize - targetStack.count)
 			if (maxInsert <= 0)
 				return stack
 
-			targetStack.increment(maxInsert)
-			stack.decrement(maxInsert)
-			inventory.markDirty()
+			targetStack.grow(maxInsert)
+			stack.shrink(maxInsert)
+			inventory.setChanged()
 
 			return stack
 		}

@@ -4,11 +4,12 @@ import at.petrak.hexcasting.common.lib.hex.HexIotaTypes
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.casting.iotas.DyeIota
 import miyucomics.hexical.casting.iotas.PigmentIota
-import net.minecraft.registry.Registry
+import net.minecraft.core.Registry
+import net.minecraftforge.registries.RegisterEvent
 
 object HexicalIota {
-	fun init() {
-		Registry.register(HexIotaTypes.REGISTRY, HexicalMain.id("dye"), DyeIota.TYPE)
-		Registry.register(HexIotaTypes.REGISTRY, HexicalMain.id("pigment"), PigmentIota.TYPE)
+	fun init(event: RegisterEvent) {
+		event.register(HexIotaTypes.REGISTRY.key(), HexicalMain.id("dye")) { DyeIota.TYPE }
+		event.register(HexIotaTypes.REGISTRY.key(), HexicalMain.id("pigment")) { PigmentIota.TYPE }
 	}
 }

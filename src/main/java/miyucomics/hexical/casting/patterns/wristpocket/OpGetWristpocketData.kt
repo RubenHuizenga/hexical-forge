@@ -5,7 +5,7 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import miyucomics.hexical.casting.mishaps.NeedsWristpocketMishap
 import miyucomics.hexical.utils.WristpocketUtils
-import net.minecraft.item.ItemStack
+import net.minecraft.world.item.ItemStack
 
 class OpGetWristpocketData(private val process: (ItemStack) -> List<Iota>) : ConstMediaAction {
 	override val argc = 0

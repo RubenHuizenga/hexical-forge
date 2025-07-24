@@ -4,15 +4,15 @@ import at.petrak.hexcasting.api.casting.castables.ConstMediaAction
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.level.ServerPlayer
 
 class OpSendTelepathy : ConstMediaAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): List<Iota> {
 		val caster = env.castingEntity
-		if (caster !is ServerPlayerEntity)
+		if (caster !is ServerPlayer)
 			throw MishapBadCaster()
-		caster.sendMessage(args[0].display(), true)
+		caster.displayClientMessage(args[0].display(), true)
 		return listOf()
 	}
 }

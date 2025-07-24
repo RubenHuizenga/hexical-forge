@@ -20,13 +20,13 @@ import at.petrak.hexcasting.common.lib.hex.HexIotaTypes
 import miyucomics.hexical.casting.frames.ScarabFrame
 import miyucomics.hexical.items.ScarabBeetleItem
 import miyucomics.hexical.registry.HexicalItems
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.level.ServerLevel
 
 object InjectionHelper {
 	@JvmStatic
-	fun handleScarab(vm: CastingVM, iota: PatternIota, continuation: SpellContinuation, world: ServerWorld): CastResult? {
+	fun handleScarab(vm: CastingVM, iota: PatternIota, continuation: SpellContinuation, world: ServerLevel): CastResult? {
 		val env = vm.env
 		if (env !is PlayerBasedCastEnv)
 			return null
@@ -38,8 +38,8 @@ object InjectionHelper {
 
 		if (ScarabBeetleItem.wouldBeRecursive(pattern.anglesSignature(), continuation))
 			return null
-		val scarab = getScarab(env.castingEntity!! as ServerPlayerEntity) ?: return null
-		val program = IotaType.deserialize(scarab.getOrCreateNbt().getCompound("program"), world) as? ListIota ?: return null
+		val scarab = getScarab(env.castingEntity!! as ServerPlayer) ?: return null
+		val program = IotaType.deserialize(scarab.getOrCreateTag().getCompound("program"), world) as? ListIota ?: return null
 
 		val newStack = vm.image.stack.toMutableList()
 		newStack.add(iota)
@@ -56,12 +56,12 @@ object InjectionHelper {
 		)
 	}
 
-	private fun getScarab(player: ServerPlayerEntity): ItemStack? {
+	private fun getScarab(player: ServerPlayer): ItemStack? {
 		val inventory = player.inventory
-		for (smallInventory in listOf(inventory.main, inventory.armor, inventory.offHand)) {
+		for (smallInventory in listOf(inventory.items, inventory.armor, inventory.offhand)) {
 			for (stack in smallInventory) {
-				val nbt = stack.nbt
-				if (stack.isOf(HexicalItems.SCARAB_BEETLE_ITEM) && nbt != null && nbt.getBoolean("active"))
+				val nbt = stack.tag
+				if (stack.`is`(HexicalItems.SCARAB_BEETLE_ITEM.get()) && nbt != null && nbt.getBoolean("active"))
 					return stack
 			}
 		}
@@ -69,7 +69,7 @@ object InjectionHelper {
 	}
 
 	@JvmStatic
-	fun handleGrimoire(vm: CastingVM, iota: Iota, world: ServerWorld): ExecutionClientView? {
+	fun handleGrimoire(vm: CastingVM, iota: Iota, world: ServerLevel): ExecutionClientView? {
 		val env = vm.env
 		if (env !is StaffCastEnv)
 			return null
@@ -77,21 +77,21 @@ object InjectionHelper {
 			return null
 
 		val pattern = (iota as PatternIota).pattern
-		val grimoire = getGrimoire(env.castingEntity!! as ServerPlayerEntity, pattern) ?: return null
+		val grimoire = getGrimoire(env.castingEntity!! as ServerPlayer, pattern) ?: return null
 
-		val data = grimoire.getOrCreateNbt().getCompound("expansions")
+		val data = grimoire.getOrCreateTag().getCompound("expansions")
 		if (!data.contains(pattern.anglesSignature())) return null
 		val deserialized = IotaType.deserialize(data.getCompound(pattern.anglesSignature()), world) as? ListIota ?: return null
 
 		return vm.queueExecuteAndWrapIotas(deserialized.list.toList(), world)
 	}
 
-	private fun getGrimoire(player: ServerPlayerEntity, pattern: HexPattern): ItemStack? {
+	private fun getGrimoire(player: ServerPlayer, pattern: HexPattern): ItemStack? {
 		val inventory = player.inventory
-		for (smallInventory in listOf(inventory.main, inventory.armor, inventory.offHand)) {
+		for (smallInventory in listOf(inventory.items, inventory.armor, inventory.offhand)) {
 			for (stack in smallInventory) {
-				val nbt = stack.nbt
-				if (stack.isOf(HexicalItems.GRIMOIRE_ITEM) && nbt != null && nbt.getCompound("expansions").contains(pattern.anglesSignature()))
+				val nbt = stack.tag
+				if (stack.`is`(HexicalItems.GRIMOIRE_ITEM.get()) && nbt != null && nbt.getCompound("expansions").contains(pattern.anglesSignature()))
 					return stack
 			}
 		}

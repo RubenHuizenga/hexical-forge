@@ -9,10 +9,10 @@ import at.petrak.hexcasting.api.casting.getVec3
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.registry.HexicalItems
-import net.minecraft.entity.ItemEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.core.BlockPos
+import net.minecraft.world.phys.Vec3
 
 class OpConjureCompass : SpellAction {
 	override val argc = 2
@@ -23,15 +23,15 @@ class OpConjureCompass : SpellAction {
 		return SpellAction.Result(Spell(position, target), MediaConstants.DUST_UNIT * 3, listOf(ParticleSpray.burst(position, 1.0)))
 	}
 
-	private data class Spell(val position: Vec3d, val target: BlockPos) : RenderedSpell {
+	private data class Spell(val position: Vec3, val target: BlockPos) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val stack = ItemStack(HexicalItems.CONJURED_COMPASS_ITEM, 1)
-			val nbt = stack.orCreateNbt
+			val stack = ItemStack(HexicalItems.CONJURED_COMPASS_ITEM.get(), 1)
+			val nbt = stack.orCreateTag
 			nbt.putInt("x", target.x)
 			nbt.putInt("y", target.y)
 			nbt.putInt("z", target.z)
-			nbt.putString("dimension", env.world.dimensionKey.value.toString())
-			env.world.spawnEntity(ItemEntity(env.world, position.x, position.y, position.z, stack))
+			nbt.putString("dimension", env.world.dimensionTypeId().location().toString())
+			env.world.addFreshEntity(ItemEntity(env.world, position.x, position.y, position.z, stack))
 		}
 	}
 }

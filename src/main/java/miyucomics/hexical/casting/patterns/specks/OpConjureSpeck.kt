@@ -13,9 +13,9 @@ import at.petrak.hexcasting.api.casting.math.HexPattern
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.entities.specklikes.SpeckEntity
 import miyucomics.hexical.registry.HexicalAdvancements
-import net.minecraft.command.argument.EntityAnchorArgumentType
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.util.math.Vec3d
+import net.minecraft.commands.arguments.EntityAnchorArgument
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.phys.Vec3
 
 class OpConjureSpeck : SpellAction {
 	override val argc = 3
@@ -25,21 +25,21 @@ class OpConjureSpeck : SpellAction {
 		return SpellAction.Result(Spell(position, args.getVec3(2, argc), args[0]), MediaConstants.DUST_UNIT / 100, listOf())
 	}
 
-	private data class Spell(val position: Vec3d, val rotation: Vec3d, val iota: Iota) : RenderedSpell {
+	private data class Spell(val position: Vec3, val rotation: Vec3, val iota: Iota) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {}
 		override fun cast(env: CastingEnvironment, image: CastingImage): CastingImage {
-			if (env.castingEntity is ServerPlayerEntity) {
-				HexicalAdvancements.AR.trigger(env.castingEntity as ServerPlayerEntity)
+			if (env.castingEntity is ServerPlayer) {
+				HexicalAdvancements.AR.trigger(env.castingEntity as ServerPlayer)
 				if (iota is PatternIota && iota.pattern == HexPattern.fromAngles("deaqq", HexDir.SOUTH_EAST))
-					HexicalAdvancements.HEXXY.trigger(env.castingEntity as ServerPlayerEntity)
+					HexicalAdvancements.HEXXY.trigger(env.castingEntity as ServerPlayer)
 			}
 
 			val speck = SpeckEntity(env.world)
-			speck.setPosition(position.subtract(0.0, speck.standingEyeHeight.toDouble(), 0.0))
-			speck.lookAt(EntityAnchorArgumentType.EntityAnchor.FEET, speck.pos.add(rotation))
+			speck.setPos(position.subtract(0.0, speck.eyeHeight.toDouble(), 0.0))
+			speck.lookAt(EntityAnchorArgument.Anchor.FEET, speck.position().add(rotation))
 			speck.setPigment(env.pigment)
 			speck.setIota(iota)
-			env.world.spawnEntity(speck)
+			env.world.addFreshEntity(speck)
 
 			return image.copy(stack = image.stack.toList().plus(EntityIota(speck)))
 		}

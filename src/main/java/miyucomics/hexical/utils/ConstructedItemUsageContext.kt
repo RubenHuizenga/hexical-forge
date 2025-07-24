@@ -1,15 +1,15 @@
 package miyucomics.hexical.utils
 
-import net.minecraft.item.ItemStack
-import net.minecraft.item.ItemUsageContext
-import net.minecraft.util.Hand
-import net.minecraft.util.hit.BlockHitResult
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3d
-import net.minecraft.world.World
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.context.UseOnContext
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.phys.BlockHitResult
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.world.phys.Vec3
+import net.minecraft.world.level.Level
 
-class ConstructedItemUsageContext(world: World, position: BlockPos, normal: Direction, private val horizontalNormal: Direction, stack: ItemStack, hand: Hand) : ItemUsageContext(world, null, hand, stack, BlockHitResult(Vec3d.ofCenter(position.add(normal.vector)), normal, position, false)) {
-	override fun getHorizontalPlayerFacing() = horizontalNormal
-	override fun shouldCancelInteraction() = false
+class ConstructedItemUsageContext(world: Level, position: BlockPos, normal: Direction, private val horizontalNormal: Direction, stack: ItemStack, hand: InteractionHand) : UseOnContext(world, null, hand, stack, BlockHitResult(Vec3.atCenterOf(position.offset(normal.normal)), normal, position, false)) {
+	override fun getHorizontalDirection() = horizontalNormal
+	override fun isSecondaryUseActive() = false
 }

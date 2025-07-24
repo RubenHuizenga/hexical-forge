@@ -8,13 +8,13 @@ import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.NullIota
 import at.petrak.hexcasting.common.lib.hex.HexEvalSounds
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.server.world.ServerWorld
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.server.level.ServerLevel
 
 data class ScarabFrame(val signature: String) : ContinuationFrame {
 	override val type: ContinuationFrame.Type<*> = TYPE
 
-	override fun evaluate(continuation: SpellContinuation, level: ServerWorld, harness: CastingVM): CastResult {
+	override fun evaluate(continuation: SpellContinuation, level: ServerLevel, harness: CastingVM): CastResult {
 		return CastResult(
 			NullIota(),
 			continuation,
@@ -25,8 +25,8 @@ data class ScarabFrame(val signature: String) : ContinuationFrame {
 		)
 	}
 
-	override fun serializeToNBT(): NbtCompound {
-		val compound = NbtCompound()
+	override fun serializeToNBT(): CompoundTag {
+		val compound = CompoundTag()
 		compound.putString("signature", signature)
 		return compound
 	}
@@ -36,7 +36,7 @@ data class ScarabFrame(val signature: String) : ContinuationFrame {
 
 	companion object {
 		val TYPE: ContinuationFrame.Type<ScarabFrame> = object : ContinuationFrame.Type<ScarabFrame> {
-			override fun deserializeFromNBT(compound: NbtCompound, world: ServerWorld) = ScarabFrame(compound.getString("signature"))
+			override fun deserializeFromNBT(compound: CompoundTag, world: ServerLevel) = ScarabFrame(compound.getString("signature"))
 		}
 	}
 }

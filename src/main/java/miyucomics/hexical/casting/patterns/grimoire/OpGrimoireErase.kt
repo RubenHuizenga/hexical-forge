@@ -9,12 +9,12 @@ import at.petrak.hexcasting.api.casting.math.HexPattern
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadOffhandItem
 import miyucomics.hexical.casting.patterns.grimoire.OpGrimoireIndex.Companion.populateGrimoireMetadata
 import miyucomics.hexical.registry.HexicalItems
-import net.minecraft.item.ItemStack
+import net.minecraft.world.item.ItemStack
 
 class OpGrimoireErase : SpellAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
-		val itemInfo = env.getHeldItemToOperateOn { stack -> stack.isOf(HexicalItems.GRIMOIRE_ITEM) }
+		val itemInfo = env.getHeldItemToOperateOn { stack -> stack.`is`(HexicalItems.GRIMOIRE_ITEM.get()) }
 		if (itemInfo == null)
 			throw MishapBadOffhandItem.of(null, "grimoire")
 		val stack = itemInfo.stack
@@ -25,10 +25,10 @@ class OpGrimoireErase : SpellAction {
 
 	private data class Spell(val stack: ItemStack, val key: HexPattern) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			if (!stack.orCreateNbt.contains("expansions"))
+			if (!stack.orCreateTag.contains("expansions"))
 				return
-			stack.orCreateNbt.getCompound("expansions").remove(key.anglesSignature())
-			stack.orCreateNbt.getCompound("metadata").remove(key.anglesSignature())
+			stack.orCreateTag.getCompound("expansions").remove(key.anglesSignature())
+			stack.orCreateTag.getCompound("metadata").remove(key.anglesSignature())
 		}
 	}
 }

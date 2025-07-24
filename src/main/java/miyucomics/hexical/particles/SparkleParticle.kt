@@ -3,76 +3,94 @@ package miyucomics.hexical.particles
 import com.mojang.brigadier.StringReader
 import miyucomics.hexical.registry.HexicalParticles
 import net.minecraft.client.particle.*
-import net.minecraft.client.world.ClientWorld
-import net.minecraft.network.PacketByteBuf
-import net.minecraft.particle.AbstractDustParticleEffect
-import net.minecraft.particle.ParticleEffect
-import net.minecraft.particle.ParticleType
+import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.core.particles.DustParticleOptionsBase
+import net.minecraft.core.particles.ParticleOptions
+import net.minecraft.core.particles.ParticleType
 import org.joml.Vector3f
 import java.util.*
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-
-class SparkleParticle(world: ClientWorld?, x: Double, y: Double, z: Double, velocityX: Double, velocityY: Double, velocityZ: Double, provider: SpriteProvider) : SpriteBillboardParticle(world, x, y, z, velocityX, velocityY, velocityZ) {
-	private val spriteProvider: SpriteProvider
+class SparkleParticle(world: ClientLevel, x: Double, y: Double, z: Double, velocityX: Double, velocityY: Double, velocityZ: Double, provider: SpriteSet) : TextureSheetParticle(world, x, y, z, velocityX, velocityY, velocityZ) {
+	private val spriteProvider: SpriteSet
 
 	init {
-		this.maxAge = 20
-		this.velocityX = 0.0
-		this.velocityY = 0.0
-		this.velocityZ = 0.0
+		this.lifetime = 20
+		this.xd = 0.0
+		this.yd = 0.0
+		this.zd = 0.0
 		this.spriteProvider = provider
-		this.setSprite(provider)
-		this.setSpriteForAge(provider)
+		this.pickSprite(provider)
+		this.setSpriteFromAge(provider)
 		this.scale(2.5f)
 	}
 
 	override fun tick() {
 		super.tick()
-		this.setSpriteForAge(this.spriteProvider)
+		this.setSpriteFromAge(this.spriteProvider)
 	}
 
-	public override fun getBrightness(tint: Float): Int {
-		val i = super.getBrightness(tint)
+	public override fun getLightColor(tint: Float): Int {
+		val i = super.getLightColor(tint)
 		val k = i shr 16 and 0xFF
 		return 240 or (k shl 16)
 	}
 
-	override fun getType(): ParticleTextureSheet {
-		return ParticleTextureSheet.PARTICLE_SHEET_TRANSLUCENT
+	override fun getRenderType(): ParticleRenderType {
+		return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT
 	}
 
 	@JvmRecord
-	data class Factory(val spriteProvider: SpriteProvider) : ParticleFactory<SparkleParticleEffect> {
-		override fun createParticle(effect: SparkleParticleEffect, world: ClientWorld, d: Double, e: Double, f: Double, g: Double, h: Double, i: Double): Particle {
+	data class Factory(val spriteProvider: SpriteSet) : ParticleProvider<SparkleParticleEffect> {
+		override fun createParticle(effect: SparkleParticleEffect, world: ClientLevel, d: Double, e: Double, f: Double, g: Double, h: Double, i: Double): Particle {
 			val sparkleParticle = SparkleParticle(world, d, e, f, g, h, i, this.spriteProvider)
 			sparkleParticle.setColor(effect.color.x, effect.color.y, effect.color.z)
-			sparkleParticle.setMaxAge(effect.lifespan)
+			sparkleParticle.setLifetime(effect.lifespan)
 			return sparkleParticle
 		}
 	}
 }
 
-class SparkleParticleEffect(val color: Vector3f, val lifespan: Int) : ParticleEffect {
-	object Factory : ParticleEffect.Factory<SparkleParticleEffect> {
-		override fun read(type: ParticleType<SparkleParticleEffect>, buf: PacketByteBuf): SparkleParticleEffect {
-			return SparkleParticleEffect(AbstractDustParticleEffect.readColor(buf), buf.readInt())
+class SparkleParticleEffect(val color: Vector3f, val lifespan: Int) : ParticleOptions {
+	object Factory : ParticleOptions.Deserializer<SparkleParticleEffect> {
+		override fun fromNetwork(type: ParticleType<SparkleParticleEffect>, buf: FriendlyByteBuf): SparkleParticleEffect {
+			return SparkleParticleEffect(DustParticleOptionsBase.readVector3f(buf), buf.readInt())
 		}
 
-		override fun read(particleType: ParticleType<SparkleParticleEffect>, stringReader: StringReader): SparkleParticleEffect {
-			val color = AbstractDustParticleEffect.readColor(stringReader)
+		override fun fromCommand(particleType: ParticleType<SparkleParticleEffect>, stringReader: StringReader): SparkleParticleEffect {
+			val color = DustParticleOptionsBase.readVector3f(stringReader)
 			stringReader.expect(' ')
 			val lifespan = stringReader.readInt()
 			return SparkleParticleEffect(color, lifespan)
 		}
 	}
 
-	override fun getType() = HexicalParticles.SPARKLE_PARTICLE
-	override fun asString() = String.format(Locale.ROOT, "sparkle_particle %.2f %.2f %.2f", color.x(), color.y(), color.z())
+	override fun getType() = HexicalParticles.SPARKLE_PARTICLE.get()
+	override fun writeToString() = String.format(Locale.ROOT, "sparkle_particle %.2f %.2f %.2f", color.x(), color.y(), color.z())
 
-	override fun write(packet: PacketByteBuf) {
+	override fun writeToNetwork(packet: FriendlyByteBuf) {
 		packet.writeFloat(color.x())
 		packet.writeFloat(color.y())
 		packet.writeFloat(color.z())
 		packet.writeInt(lifespan)
+	}
+
+	object Type : ParticleType<SparkleParticleEffect>(false, SparkleParticleEffect.Factory) {
+		override fun codec(): Codec<SparkleParticleEffect> { 
+			return CODEC
+		}
+
+		val CODEC: Codec<SparkleParticleEffect> = RecordCodecBuilder.create { instance ->
+			instance.group(
+				Codec.FLOAT.fieldOf("r").forGetter { it.color.x() },
+				Codec.FLOAT.fieldOf("g").forGetter { it.color.y() },
+				Codec.FLOAT.fieldOf("b").forGetter { it.color.z() },
+				Codec.INT.fieldOf("lifespan").forGetter { it.lifespan }
+			).apply(instance) { r, g, b, lifespan -> 
+				SparkleParticleEffect(Vector3f(r, g, b), lifespan)
+			}
+		}
 	}
 }

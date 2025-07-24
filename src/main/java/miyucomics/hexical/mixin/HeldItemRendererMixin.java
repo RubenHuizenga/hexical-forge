@@ -2,34 +2,34 @@ package miyucomics.hexical.mixin;
 
 import at.petrak.hexcasting.xplat.IXplatAbstractions;
 import miyucomics.hexical.data.EvokeState;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.item.HeldItemRenderer;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.util.math.ColorHelper;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.world.item.ItemDisplayContext;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.FastColor;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = HeldItemRenderer.class)
+@Mixin(value = ItemInHandRenderer.class)
 public class HeldItemRendererMixin {
-	@Inject(method = "renderItem(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/item/ItemStack;Lnet/minecraft/client/render/model/json/ModelTransformationMode;ZLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V", at = @At(value = "HEAD"))
-	void spawnEvokingParticles(LivingEntity entity, ItemStack itemStack, ModelTransformationMode modelTransformationMode, boolean bl, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
-		if (entity instanceof ClientPlayerEntity player && EvokeState.isEvoking(entity.getUuid())) {
-			ClientWorld world = (ClientWorld) entity.getWorld();
-			Vector3f offset = matrixStack.peek().getPositionMatrix().transformPosition(new Vector3f(0, 0, 0));
+	@Inject(method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "HEAD"))
+	void spawnEvokingParticles(LivingEntity entity, ItemStack itemStack, ItemDisplayContext modelTransformationMode, boolean bl, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i, CallbackInfo ci) {
+		if (entity instanceof LocalPlayer player && EvokeState.isEvoking(entity.getUUID())) {
+			ClientLevel world = (ClientLevel) entity.level();
+			Vector3f offset = matrixStack.last().pose().transformPosition(new Vector3f(0, 0, 0));
 			Vector3f position = offset.add((float) entity.getX(), (float) entity.getY(), (float) entity.getZ());
-			int color = IXplatAbstractions.INSTANCE.getPigment(player).getColorProvider().getColor(world.getTime() * 10, player.getPos());
-			float r = ColorHelper.Argb.getRed(color) / 255f;
-			float g = ColorHelper.Argb.getGreen(color) / 255f;
-			float b = ColorHelper.Argb.getBlue(color) / 255f;
+			int color = IXplatAbstractions.INSTANCE.getPigment(player).getColorProvider().getColor(world.getGameTime() * 10, player.position());
+			float r = FastColor.ARGB32.red(color) / 255f;
+			float g = FastColor.ARGB32.green(color) / 255f;
+			float b = FastColor.ARGB32.blue(color) / 255f;
 			world.addParticle(ParticleTypes.ENTITY_EFFECT, position.x, position.y, position.z, r, g, b);
 		}
 	}

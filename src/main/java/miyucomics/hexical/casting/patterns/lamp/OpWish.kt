@@ -10,8 +10,8 @@ import at.petrak.hexcasting.xplat.IXplatAbstractions
 import miyucomics.hexical.interfaces.GenieLamp
 import miyucomics.hexical.registry.HexicalAdvancements
 import miyucomics.hexical.utils.CastingUtils
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
 
 class OpWish : SpellAction {
 	override val argc = 1
@@ -27,8 +27,8 @@ class OpWish : SpellAction {
 	private data class Spell(val patterns: List<Iota>, val stack: ItemStack) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
 			IXplatAbstractions.INSTANCE.findHexHolder(stack)?.writeHex(patterns, null, IXplatAbstractions.INSTANCE.findMediaHolder(stack)?.media!!)
-			if (env.castingEntity is ServerPlayerEntity)
-				HexicalAdvancements.EDUCATE_GENIE.trigger(env.castingEntity as ServerPlayerEntity)
+			if (env.castingEntity is ServerPlayer)
+				HexicalAdvancements.EDUCATE_GENIE.trigger(env.castingEntity as ServerPlayer)
 		}
 	}
 }

@@ -8,9 +8,9 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import miyucomics.hexical.data.LedgerData;
 import miyucomics.hexical.registry.HexicalItems;
 import miyucomics.hexical.registry.HexicalPotions;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,18 +20,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = PlayerBasedCastEnv.class, remap = false)
 public class PlayerBasedCastEnvMixin {
-	@Shadow @Final protected ServerPlayerEntity caster;
+	@Shadow @Final protected ServerPlayer caster;
 
 	@WrapMethod(method = "canOvercast")
 	private boolean canOvercast(Operation<Boolean> original) {
-		if (this.caster.getEquippedStack(EquipmentSlot.HEAD).isOf(HexicalItems.LEI) || this.caster.hasStatusEffect(HexicalPotions.WOOLEYED_EFFECT))
+		if (this.caster.getItemBySlot(EquipmentSlot.HEAD).is(HexicalItems.LEI.get()) || this.caster.hasEffect(HexicalPotions.WOOLEYED_EFFECT.get()))
 			return false;
 		return original.call();
 	}
 
 	@Inject(method = "sendMishapMsgToPlayer(Lat/petrak/hexcasting/api/casting/eval/sideeffects/OperatorSideEffect$DoMishap;)V", at = @At("HEAD"))
 	private void captureMishap(OperatorSideEffect.DoMishap mishap, CallbackInfo ci) {
-		Text message = mishap.getMishap().errorMessageWithName((CastingEnvironment) (Object) this, mishap.getErrorCtx());
+		Component message = mishap.getMishap().errorMessageWithName((CastingEnvironment) (Object) this, mishap.getErrorCtx());
 		if (message != null)
 			LedgerData.getLedger(caster).saveMishap(message);
 	}

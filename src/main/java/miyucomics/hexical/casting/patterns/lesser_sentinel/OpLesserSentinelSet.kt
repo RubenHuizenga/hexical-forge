@@ -9,13 +9,13 @@ import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import miyucomics.hexical.interfaces.PlayerEntityMinterface
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.util.math.Vec3d
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.phys.Vec3
 
 class OpLesserSentinelSet : SpellAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
-		if (env.castingEntity !is ServerPlayerEntity)
+		if (env.castingEntity !is ServerPlayer)
 			throw MishapBadCaster()
 		val positions = args.getList(0, argc).map {
 			if (it !is Vec3Iota)
@@ -25,11 +25,11 @@ class OpLesserSentinelSet : SpellAction {
 		return SpellAction.Result(Spell(positions), 0, listOf())
 	}
 
-	private data class Spell(val pos: List<Vec3d>) : RenderedSpell {
+	private data class Spell(val pos: List<Vec3>) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
 			val lesserSentinels = (env.castingEntity as PlayerEntityMinterface).getLesserSentinels()
-			lesserSentinels.getCurrentInstance(env.castingEntity as ServerPlayerEntity).lesserSentinels = pos.toMutableList()
-			lesserSentinels.syncToClient(env.castingEntity as ServerPlayerEntity)
+			lesserSentinels.getCurrentInstance(env.castingEntity as ServerPlayer).lesserSentinels = pos.toMutableList()
+			lesserSentinels.syncToClient(env.castingEntity as ServerPlayer)
 		}
 	}
 }

@@ -9,7 +9,7 @@ import miyucomics.hexical.casting.mishaps.NeedsArchGenieLampMishap
 import miyucomics.hexical.interfaces.PlayerEntityMinterface
 import miyucomics.hexical.items.hasActiveArchLamp
 import miyucomics.hexical.utils.CastingUtils
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.level.ServerPlayer
 
 class OpSetArchLampStorage : ConstMediaAction {
 	override val argc = 1
@@ -18,7 +18,7 @@ class OpSetArchLampStorage : ConstMediaAction {
 		CastingUtils.assertNoTruename(iota, env)
 
 		val caster = env.castingEntity
-		if (caster !is ServerPlayerEntity)
+		if (caster !is ServerPlayer)
 			throw MishapBadCaster()
 		if (!hasActiveArchLamp(caster))
 			throw NeedsArchGenieLampMishap()
