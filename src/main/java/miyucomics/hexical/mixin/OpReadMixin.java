@@ -5,7 +5,7 @@ import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.NullIota;
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota;
 import at.petrak.hexcasting.common.casting.actions.rw.OpRead;
-import miyucomics.hexical.registry.HexicalItems;
+import miyucomics.hexical.inits.HexicalItems;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -21,18 +21,17 @@ import java.util.List;
 public class OpReadMixin {
 	@Inject(method = "execute", at = @At("HEAD"), cancellable = true)
 	private void readCompass(List<? extends Iota> args, CastingEnvironment env, CallbackInfoReturnable<List<Iota>> cir) {
-		CastingEnvironment.HeldItemInfo data = env.getHeldItemToOperateOn(item -> item.is(HexicalItems.CONJURED_COMPASS_ITEM.get()));
+		CastingEnvironment.HeldItemInfo data = env.getHeldItemToOperateOn(item -> item.is(HexicalItems.CURIO_COMPASS));
 		if (data == null)
 			return;
-		ItemStack stack = data.stack();
-		CompoundTag nbt = stack.getOrCreateTag();
-		if (nbt.getString("dimension").equals(env.getWorld().dimensionTypeId().location().toString())) {
-			LivingEntity caster = env.getCastingEntity();
-			if (caster != null)
-				cir.setReturnValue(List.of(new Vec3Iota(new Vec3(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z")).subtract(caster.getEyePosition()).normalize())));
-			else
-				cir.setReturnValue(List.of(new NullIota()));
-		} else
+
+		CompoundTag nbt = data.stack().getTag();
+		LivingEntity caster = env.getCastingEntity();
+		if (caster == null || nbt == null)
 			cir.setReturnValue(List.of(new NullIota()));
+
+		assert nbt != null;
+		int[] rawCoordinates = nbt.getIntArray("needle");
+		cir.setReturnValue(List.of(new Vec3Iota(new Vec3(rawCoordinates[0], rawCoordinates[1], rawCoordinates[2]).subtract(caster.getEyePosition()).normalize())));
 	}
 }

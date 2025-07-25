@@ -3,7 +3,7 @@ package miyucomics.hexical.mixin;
 import at.petrak.hexcasting.client.gui.GuiSpellcasting;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import miyucomics.hexical.registry.HexicalBlocks;
+import miyucomics.hexical.inits.HexicalBlocks;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.util.Mth;

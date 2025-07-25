@@ -1,7 +1,7 @@
 package miyucomics.hexical.mixin;
 
 import miyucomics.hexical.HexicalMain;
-import miyucomics.hexical.registry.HexicalPotions;
+import miyucomics.hexical.features.periwinkle.WooleyedEffect;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,7 +23,7 @@ public abstract class InGameHudMixin {
 		Player player = Minecraft.getInstance().player;
 		if (player == null)
 			return;
-		if (!player.hasEffect(HexicalPotions.WOOLEYED_EFFECT.get()))
+		if (!player.hasEffect(WooleyedEffect.INSTANCE))
 			return;
 		if (type == Gui.HeartType.NORMAL) {
 			guiGraphics.blit(HEARTS, x, y, halfHeart ? 9 : 0, v, 9, 9);

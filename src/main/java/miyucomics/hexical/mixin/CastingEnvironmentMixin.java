@@ -3,7 +3,8 @@ package miyucomics.hexical.mixin;
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import miyucomics.hexical.registry.HexicalPotions;
+import miyucomics.hexical.features.periwinkle.WooleyedEffect;
+import miyucomics.hexical.inits.HexicalItems;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.effect.MobEffectInstance;
 import org.jetbrains.annotations.Nullable;
@@ -18,10 +19,11 @@ public abstract class CastingEnvironmentMixin {
 	private boolean canOvercast(Operation<Boolean> original) {
 		if (this.getCastingEntity() == null)
 			return original.call();
-		MobEffectInstance wooleye = this.getCastingEntity().getEffect(HexicalPotions.WOOLEYED_EFFECT.get());
+		if (this.getCastingEntity() instanceof Player player && player.getInventory().armor.get(3).isOf(HexicalItems.LEI))
+			return true;
+		MobEffectInstance wooleye = this.getCastingEntity().getStatusEffect(WooleyedEffect.INSTANCE);
 		if (wooleye == null)
 			return original.call();
-		System.out.println(wooleye.getAmplifier());
 		return wooleye.getAmplifier() < 1;
 	}
 }

@@ -3,9 +3,9 @@ package miyucomics.hexical.mixin;
 import at.petrak.hexcasting.common.lib.HexSounds;
 import io.netty.buffer.Unpooled;
 import kotlin.Pair;
-import miyucomics.hexical.registry.HexicalNetworking;
-import miyucomics.hexical.registry.HexicalNetworking.CharmedItemUsePacket;
-import miyucomics.hexical.utils.CharmedItemUtilities;
+import miyucomics.hexical.features.charms.CharmUtilities;
+import miyucomics.hexical.features.charms.ServerCharmedUseReceiver;
+import miyucomics.hexical.features.curios.CurioItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.world.item.ItemStack;
@@ -20,8 +20,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 @Mixin(value = MouseHandler.class)
 public class MouseMixin {
@@ -48,12 +46,15 @@ public class MouseMixin {
 		if (buttonPressed == -1)
 			return;
 
-		for (Pair<InteractionHand, ItemStack> pair : CharmedItemUtilities.getUseableCharmedItems(minecraft.player)) {
-			if (!CharmedItemUtilities.shouldIntercept(pair.getSecond(), buttonPressed, minecraft.player.isShiftKeyDown()))
+		for (Pair<InteractionHand, ItemStack> pair : CharmUtilities.getUseableCharmedItems(minecraft.player)) {
+			if (!CharmUtilities.shouldIntercept(pair.getSecond(), buttonPressed, minecraft.player.isShiftKeyDown()))
 				continue;
 
-			minecraft.player.swing(pair.getFirst());
-			minecraft.player.level().playSound(minecraft.player, minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ(), HexSounds.CAST_HERMES, SoundSource.PLAYERS, 1f, 1f);
+			if (!(pair.getSecond().getItem() instanceof CurioItem)) {
+				minecraft.player.swing(pair.getFirst());
+				minecraft.player.clientLevel.playSound(null, minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ(), HexSounds.CAST_HERMES, SoundSource.MASTER, 0.25f, 1f);
+			}
+
 			CharmedItemUsePacket packet = new CharmedItemUsePacket(buttonPressed, pair.getFirst());
 			HexicalNetworking.sendToServer(packet);
 			ci.cancel();

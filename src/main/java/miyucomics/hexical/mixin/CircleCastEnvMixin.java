@@ -5,7 +5,7 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment;
 import at.petrak.hexcasting.api.casting.eval.env.CircleCastEnv;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import miyucomics.hexical.blocks.PedestalBlockEntity;
+import miyucomics.hexical.features.pedestal.PedestalBlockEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -24,7 +24,7 @@ public abstract class CircleCastEnvMixin {
 
 	@WrapMethod(method = "getPrimaryStacks")
 	public List<CastingEnvironment.HeldItemInfo> addHands(Operation<List<CastingEnvironment.HeldItemInfo>> original) {
-		if (circleState().currentImage.getUserData().contains("impetusHand")) {
+		if (circleState().currentImage.getUserData().contains("impetus_hand")) {
 			PedestalBlockEntity pedestal = getPedestal();
 			return List.of(new CastingEnvironment.HeldItemInfo(pedestal.getItem(0), InteractionHand.OFF_HAND));
 		}

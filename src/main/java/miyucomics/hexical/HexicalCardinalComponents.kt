@@ -10,8 +10,8 @@ import at.petrak.hexcasting.forge.cap.ForgeCapabilityHandler
 import at.petrak.hexcasting.forge.cap.adimpl.CapEntityIotaHolder
 import at.petrak.hexcasting.forge.cap.adimpl.CapStaticMediaHolder
 import at.petrak.hexcasting.forge.cap.HexCapabilities
-import miyucomics.hexical.entities.AnimatedScrollEntity
-import miyucomics.hexical.registry.HexicalItems
+import miyucomics.hexical.features.animated_scrolls.AnimatedScrollEntity
+import miyucomics.hexical.inits.HexicalItems
 import net.minecraft.nbt.Tag
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
@@ -27,6 +27,7 @@ import net.minecraftforge.event.AttachCapabilitiesEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
 import java.util.function.BooleanSupplier
+
 
 object HexicalForgeCapabilityHandler {
     fun attachItemCaps(event: AttachCapabilitiesEvent<ItemStack>) {

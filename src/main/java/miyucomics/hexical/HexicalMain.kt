@@ -1,6 +1,6 @@
 package miyucomics.hexical
 
-import miyucomics.hexical.registry.*
+import miyucomics.hexical.inits.*
 import miyucomics.hexical.data.LesserSentinelState
 import miyucomics.hexical.data.prestidigitation.PrestidigitationData
 import net.minecraftforge.fml.common.Mod
@@ -33,8 +33,8 @@ class HexicalMain {
 		MOD_BUS.addListener(HexicalAdvancements::init)
 		
 		HexicalBlocks.init()
-		HexicalData.init()
 		HexicalEntities.init()
+
 		HexicalServerEvents.init()
 		
 		MOD_BUS.addListener(HexicalIota::init)
@@ -53,17 +53,20 @@ class HexicalMain {
         var evBus = MinecraftForge.EVENT_BUS;
         evBus.addGenericListener(ItemStack::class.java, HexicalForgeCapabilityHandler::attachItemCaps);
         evBus.addGenericListener(Entity::class.java, HexicalForgeCapabilityHandler::attachEntityCaps);
+
+		// New
+		HexicalIota.init()
+		HexicalItems.init()
+		HexicalParticles.init()
+		HexicalSounds.init()
+		HexicalHooksServer.init()
 	}
 
 	companion object {
 		const val MOD_ID: String = "hexical"
 		val LOGGER: Logger = LogManager.getLogger(MOD_ID);
 
-		@JvmField
-		val RANDOM: RandomSource = RandomSource.create()
-		const val EVOKE_DURATION: Int = 20
-
-		@JvmStatic
-		fun id(string: String) = ResourceLocation(MOD_ID, string)
+		@JvmField val RANDOM: RandomSource = RandomSource.create()
+		@JvmStatic fun id(string: String) = ResourceLocation(MOD_ID, string)
 	}
 }

@@ -8,7 +8,7 @@ resource_dirs = [
     "{_common.src}/main/resources",
     { path="{^_common.src}/main/generated" },
     { modid="hexcasting" },
-    { modid="hexposition" },
+    { modid="hexpose" },
     { modid="minecraft" },
     { modid="hexdoc" },
 ]
@@ -18,7 +18,7 @@ export_dir = "src/hexdoc_hexical/_export/generated"
 icon = "icon.png"
 include = [
     "hexical",
-    "hexposition",
+    "hexpose",
     "hexcasting",
     "hexdoc",
 ]
@@ -35,9 +35,11 @@ _pattern_regex = { "!Raw" = 'register\("(?P<name>[^"]+)"?,\s"(?P<signature>[qwea
 "hexical:gauntlet_staff" = { texture="hexical:textures/item/gauntlet_staff.png" }
 "hexical:lightning_rod_staff" = { texture="hexical:textures/item/lightning_rod_staff.png" }
 "hexical:media_jar" = { texture="hexical:textures/item/media_jar.png" }
+"hexical:held_curio_flute" = { texture="hexical:textures/item/gauntlet_staff.png" }
+"hexical:held_curio_handbell" = { texture="hexical:textures/item/gauntlet_staff.png" }
 
 [[extra.hexcasting.pattern_stubs]]
-path = "{^^^_common.package}/registry/HexicalActions.kt"
+path = "{^^^_common.package}/inits/HexicalActions.kt"
 regex = "{^_pattern_regex}"
 
 [_common]
