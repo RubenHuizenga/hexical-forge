@@ -8,7 +8,6 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadOffhandItem
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.xplat.IXplatAbstractions
-import miyucomics.hexical.interfaces.GenieLamp
 import miyucomics.hexical.inits.HexicalAdvancements
 import miyucomics.hexical.inits.HexicalItems
 import net.minecraft.world.item.ItemStack
@@ -18,7 +17,7 @@ import kotlin.math.min
 object OpRechargeLamp : SpellAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
-		val stack = env.getHeldItemToOperateOn { stack -> stack.isOf(HexicalItems.HAND_LAMP_ITEM) || stack.isOf(HexicalItems.ARCH_LAMP_ITEM) }
+		val stack = env.getHeldItemToOperateOn { stack -> stack.`is`(HexicalItems.HAND_LAMP_ITEM.get()) || stack.`is`(HexicalItems.ARCH_LAMP_ITEM.get()) }
 		if (stack == null)
 			throw MishapBadOffhandItem.of(null, "lamp")
 

@@ -3,8 +3,8 @@ package miyucomics.hexical.features.wristpocket
 import at.petrak.hexcasting.api.casting.castables.ConstMediaAction
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
-import miyucomics.hexical.casting.mishaps.NeedsWristpocketMishap
-import miyucomics.hexical.utils.WristpocketUtils
+import miyucomics.hexical.features.wristpocket.NeedsWristpocketMishap
+import miyucomics.hexical.features.wristpocket.WristpocketUtils
 import net.minecraft.world.item.ItemStack
 import at.petrak.hexcasting.api.casting.iota.NullIota
 import miyucomics.hexpose.iotas.asActionResult

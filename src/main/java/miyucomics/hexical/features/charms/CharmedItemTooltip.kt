@@ -7,25 +7,28 @@ import miyucomics.hexical.features.charms.CharmUtilities.CHARMED_COLOR
 import miyucomics.hexical.features.charms.CharmUtilities.getMaxMedia
 import miyucomics.hexical.features.charms.CharmUtilities.getMedia
 import miyucomics.hexical.features.charms.CharmUtilities.isStackCharmed
-import miyucomics.hexical.misc.InitHook
 import miyucomics.hexical.misc.RenderUtils
-import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
-import net.minecraft.text.Text
-import net.minecraft.text.TextColor
+import miyucomics.hexical.misc.InitHook
+import net.minecraftforge.event.entity.player.ItemTooltipEvent
+import net.minecraftforge.common.MinecraftForge
+import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.TextColor
 
 object CharmedItemTooltip : InitHook() {
 	override fun init() {
-		ItemTooltipCallback.EVENT.register { stack, _, lines ->
-			if (!isStackCharmed(stack))
-				return@register
-			val media = getMedia(stack)
-			val maxMedia = getMaxMedia(stack)
-			lines.add(Text.translatable("hexical.charmed").styled { style -> style.withColor(CHARMED_COLOR) })
-			lines.add(Text.translatable("hexcasting.tooltip.media_amount.advanced",
-				Text.literal(RenderUtils.DUST_AMOUNT.format((media / MediaConstants.DUST_UNIT.toFloat()).toDouble())).styled { style -> style.withColor(ItemMediaHolder.HEX_COLOR) },
-				Text.translatable("hexcasting.tooltip.media", RenderUtils.DUST_AMOUNT.format((maxMedia / MediaConstants.DUST_UNIT.toFloat()).toDouble())).styled { style -> style.withColor(ItemMediaHolder.HEX_COLOR) },
-				Text.literal(RenderUtils.PERCENTAGE.format((100f * media / maxMedia).toDouble()) + "%").styled { style -> style.withColor(TextColor.fromRgb(mediaBarColor(media, maxMedia))) }
-			))
-		}
+		MinecraftForge.EVENT_BUS.register(::initItemTooltipCallbackCurio)
+	}
+
+	fun initItemTooltipCallbackCurio(event: ItemTooltipEvent) {
+		if (!isStackCharmed(event.itemStack))
+			return
+		val media = getMedia(event.itemStack)
+		val maxMedia = getMaxMedia(event.itemStack)
+		event.toolTip.add(Component.translatable("hexical.charmed").withStyle { style -> style.withColor(CHARMED_COLOR) })
+		event.toolTip.add(Component.translatable("hexcasting.tooltip.media_amount.advanced",
+			Component.literal(RenderUtils.DUST_AMOUNT.format((media / MediaConstants.DUST_UNIT.toFloat()).toDouble())).withStyle { style -> style.withColor(ItemMediaHolder.HEX_COLOR) },
+			Component.translatable("hexcasting.tooltip.media", RenderUtils.DUST_AMOUNT.format((maxMedia / MediaConstants.DUST_UNIT.toFloat()).toDouble())).withStyle { style -> style.withColor(ItemMediaHolder.HEX_COLOR) },
+			Component.literal(RenderUtils.PERCENTAGE.format((100f * media / maxMedia).toDouble()) + "%").withStyle { style -> style.withColor(TextColor.fromRgb(mediaBarColor(media, maxMedia))) }
+		))
 	}
 }

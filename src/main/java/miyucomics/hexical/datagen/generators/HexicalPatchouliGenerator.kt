@@ -4,21 +4,20 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import miyucomics.hexical.datagen.Transmutations
 import miyucomics.hexical.inits.HexicalItems
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput
-import net.minecraft.data.DataOutput
+import net.minecraft.data.PackOutput
 import net.minecraft.data.DataProvider
-import net.minecraft.data.DataWriter
-import net.minecraft.util.Identifier
+import net.minecraft.data.CachedOutput
+import net.minecraft.resources.ResourceLocation
 import java.util.concurrent.CompletableFuture
 
-class HexicalPatchouliGenerator(val output: FabricDataOutput) : DataProvider {
+class HexicalPatchouliGenerator(val output: PackOutput) : DataProvider {
 	override fun getName(): String = "Hexical Patchouli Pages"
-	override fun run(writer: DataWriter): CompletableFuture<*> = CompletableFuture.allOf(
+	override fun run(writer: CachedOutput): CompletableFuture<*> = CompletableFuture.allOf(
 		generateCurioPages(writer),
 		generateMediaJarPages(writer)
 	)
 
-	private fun generateCurioPages(writer: DataWriter): CompletableFuture<*> {
+	private fun generateCurioPages(writer: CachedOutput): CompletableFuture<*> {
 		val finalJson = JsonObject().apply {
 			addProperty("name", "hexical.page.curios.title")
 			addProperty("icon", "hexical:curio_clover")
@@ -40,11 +39,11 @@ class HexicalPatchouliGenerator(val output: FabricDataOutput) : DataProvider {
 			})
 		}
 
-		val path = output.getResolver(DataOutput.OutputType.RESOURCE_PACK, "patchouli_books/thehexbook/en_us/entries/items")
-		return DataProvider.writeToPath(writer, finalJson, path.resolve(Identifier("hexcasting", "curios"), "json"))
+		val path = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, "patchouli_books/thehexbook/en_us/entries/items")
+		return DataProvider.saveStable(writer, finalJson, path.file(ResourceLocation("hexcasting", "curios"), "json"))
 	}
 
-	private fun generateMediaJarPages(writer: DataWriter): CompletableFuture<*> {
+	private fun generateMediaJarPages(writer: CachedOutput): CompletableFuture<*> {
 		val finalJson = JsonObject().apply {
 			addProperty("name", "hexical.page.media_jar.title")
 			addProperty("icon", "hexical:media_jar")
@@ -69,7 +68,7 @@ class HexicalPatchouliGenerator(val output: FabricDataOutput) : DataProvider {
 			})
 		}
 
-		val path = output.getResolver(DataOutput.OutputType.RESOURCE_PACK, "patchouli_books/thehexbook/en_us/entries/items")
-		return DataProvider.writeToPath(writer, finalJson, path.resolve(Identifier("hexcasting", "media_jar"), "json"))
+		val path = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, "patchouli_books/thehexbook/en_us/entries/items")
+		return DataProvider.saveStable(writer, finalJson, path.file(ResourceLocation("hexcasting", "media_jar"), "json"))
 	}
 }

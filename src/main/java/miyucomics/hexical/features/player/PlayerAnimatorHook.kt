@@ -9,8 +9,8 @@ import miyucomics.hexical.features.curios.curios.HandbellCurioPlayerModel
 import miyucomics.hexical.features.evocation.EvocationAnimation
 import miyucomics.hexical.inits.HexicalItems
 import miyucomics.hexical.misc.InitHook
-import net.minecraft.util.Arm
-import net.minecraft.util.Hand
+import net.minecraft.world.entity.HumanoidArm
+import net.minecraft.world.InteractionHand
 
 object PlayerAnimatorHook : InitHook() {
 	override fun init() {
@@ -19,13 +19,13 @@ object PlayerAnimatorHook : InitHook() {
 
 			stack.addAnimLayer(100, ModifierLayer(FluteCurioPlayerModel(player)).also {
 				it.addModifierBefore(object : MirrorModifier() {
-					override fun isEnabled() = (player.mainArm == Arm.LEFT) xor (player.getStackInHand(Hand.OFF_HAND).isOf(HexicalItems.CURIO_FLUTE) && !player.getStackInHand(Hand.MAIN_HAND).isOf(HexicalItems.CURIO_FLUTE))
+					override fun isEnabled() = (player.mainArm == HumanoidArm.LEFT) xor (player.getItemInHand(InteractionHand.OFF_HAND).`is`(HexicalItems.CURIO_FLUTE.get()) && !player.getItemInHand(InteractionHand.MAIN_HAND).`is`(HexicalItems.CURIO_FLUTE.get()))
 				})
 			})
 
 			val handbellAnimation = ModifierLayer(HandbellCurioPlayerModel(player)).also {
 				it.addModifierBefore(object : MirrorModifier() {
-					override fun isEnabled() = (player.mainArm == Arm.LEFT) xor (player.getStackInHand(Hand.OFF_HAND).isOf(HexicalItems.CURIO_HANDBELL) && !player.getStackInHand(Hand.MAIN_HAND).isOf(HexicalItems.CURIO_HANDBELL))
+					override fun isEnabled() = (player.mainArm == HumanoidArm.LEFT) xor (player.getItemInHand(InteractionHand.OFF_HAND).`is`(HexicalItems.CURIO_HANDBELL.get()) && !player.getItemInHand(InteractionHand.MAIN_HAND).`is`(HexicalItems.CURIO_HANDBELL.get()))
 				})
 			}
 			PlayerAnimationAccess.getPlayerAssociatedData(player).set(HandbellCurioItemModel.clientReceiver, handbellAnimation)

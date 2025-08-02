@@ -2,28 +2,28 @@ package miyucomics.hexical.features.hopper.targets
 
 import miyucomics.hexical.features.hopper.HopperDestination
 import miyucomics.hexical.features.hopper.HopperSource
-import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.Direction
+import net.minecraft.world.WorldlyContainer
+import net.minecraft.world.item.ItemStack
+import net.minecraft.core.Direction
 
-class SidedInventoryEndpoint(private val inventory: SidedInventory, private val direction: Direction) : HopperSource, HopperDestination {
+class SidedInventoryEndpoint(private val inventory: WorldlyContainer, private val direction: Direction) : HopperSource, HopperDestination {
 	override fun getItems(): List<ItemStack> {
-		val slots = inventory.getAvailableSlots(direction)
-		return slots.map { inventory.getStack(it).copy() }.filterNot { it.isEmpty }
+		val slots = inventory.getSlotsForFace(direction)
+		return slots.map { inventory.getItem(it).copy() }.filterNot { it.isEmpty }
 	}
 
 	override fun withdraw(stack: ItemStack, amount: Int): Boolean {
 		var remaining = amount
-		val slots = inventory.getAvailableSlots(direction)
+		val slots = inventory.getSlotsForFace(direction)
 
 		for (slot in slots) {
-			val existing = inventory.getStack(slot)
+			val existing = inventory.getItem(slot)
 
-			if (!ItemStack.areItemsEqual(existing, stack)) continue
-			if (!inventory.canExtract(slot, stack, direction)) continue
+			if (!ItemStack.isSameItem(existing, stack)) continue
+			if (!inventory.canTakeItemThroughFace(slot, stack, direction)) continue
 
 			val toTake = remaining.coerceAtMost(existing.count)
-			existing.decrement(toTake)
+			existing.shrink(toTake)
 			remaining -= toTake
 
 			if (remaining <= 0) return true
@@ -34,18 +34,18 @@ class SidedInventoryEndpoint(private val inventory: SidedInventory, private val 
 
 	override fun simulateDeposit(stack: ItemStack): Int {
 		var remaining = stack.count
-		val slots = inventory.getAvailableSlots(direction)
+		val slots = inventory.getSlotsForFace(direction)
 
 		for (slot in slots) {
-			if (!inventory.canInsert(slot, stack, direction)) continue
+			if (!inventory.canPlaceItemThroughFace(slot, stack, direction)) continue
 
-			val existing = inventory.getStack(slot)
+			val existing = inventory.getItem(slot)
 
 			if (existing.isEmpty) {
-				val toInsert = remaining.coerceAtMost(stack.maxCount)
+				val toInsert = remaining.coerceAtMost(stack.maxStackSize)
 				remaining -= toInsert
-			} else if (ItemStack.canCombine(existing, stack)) {
-				val space = existing.maxCount - existing.count
+			} else if (ItemStack.isSameItemSameTags(existing, stack)) {
+				val space = existing.maxStackSize - existing.count
 				val toInsert = remaining.coerceAtMost(space)
 				remaining -= toInsert
 			}
@@ -58,24 +58,24 @@ class SidedInventoryEndpoint(private val inventory: SidedInventory, private val 
 
 	override fun deposit(stack: ItemStack): ItemStack {
 		val working = stack.copy()
-		val slots = inventory.getAvailableSlots(direction)
+		val slots = inventory.getSlotsForFace(direction)
 
 		for (slot in slots) {
-			if (!inventory.canInsert(slot, working, direction)) continue
+			if (!inventory.canPlaceItemThroughFace(slot, working, direction)) continue
 
-			val existing = inventory.getStack(slot)
+			val existing = inventory.getItem(slot)
 
 			if (existing.isEmpty) {
 				val placed = working.copy()
-				val toPlace = working.count.coerceAtMost(placed.maxCount)
+				val toPlace = working.count.coerceAtMost(placed.maxStackSize)
 				placed.count = toPlace
-				inventory.setStack(slot, placed)
-				working.decrement(toPlace)
-			} else if (ItemStack.canCombine(existing, working)) {
-				val space = existing.maxCount - existing.count
+				inventory.setItem(slot, placed)
+				working.shrink(toPlace)
+			} else if (ItemStack.isSameItemSameTags(existing, working)) {
+				val space = existing.maxStackSize - existing.count
 				val toAdd = working.count.coerceAtMost(space)
-				existing.increment(toAdd)
-				working.decrement(toAdd)
+				existing.grow(toAdd)
+				working.shrink(toAdd)
 			}
 
 			if (working.isEmpty) break

@@ -1,42 +1,47 @@
 package miyucomics.hexical.features.peripherals
 
-import at.petrak.hexcasting.fabric.event.MouseScrollCallback
 import miyucomics.hexical.inits.HexicalKeybinds
+import miyucomics.hexical.misc.HexicalNetworking
 import miyucomics.hexical.misc.InitHook
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
-import net.minecraft.client.MinecraftClient
+import net.minecraftforge.event.TickEvent
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraft.client.Minecraft
+import net.minecraft.client.player.Input
+import net.minecraftforge.common.MinecraftForge
 
 object ClientPeripheralPusher : InitHook() {
 	private var previousState = mutableMapOf<String, Boolean>()
 
 	override fun init() {
-		ClientTickEvents.END_CLIENT_TICK.register { client: MinecraftClient ->
-			if (client.player == null)
-				return@register
+		MinecraftForge.EVENT_BUS.addListener(::initTickEvent)
+		MinecraftForge.EVENT_BUS.addListener(::initMouseCallback)
+	}
 
-			for (key in listOf(client.options.forwardKey, client.options.leftKey, client.options.rightKey, client.options.backKey, client.options.jumpKey, client.options.sneakKey, client.options.useKey, client.options.attackKey, HexicalKeybinds.TELEPATHY_KEYBIND, HexicalKeybinds.EVOKE_KEYBIND)) {
-				if (previousState.keys.contains(key.translationKey)) {
-					if (previousState[key.translationKey] == true && !key.isPressed) {
-						ClientPlayNetworking.send(ServerPeripheralReceiver.RELEASED_KEY_CHANNEL, PacketByteBufs.create().also { it.writeString(key.translationKey) })
-					} else if (previousState[key.translationKey] == false && key.isPressed) {
-						ClientPlayNetworking.send(ServerPeripheralReceiver.PRESSED_KEY_CHANNEL, PacketByteBufs.create().also { it.writeString(key.translationKey) })
+	fun initTickEvent(event: TickEvent.ClientTickEvent) {
+		if (event.phase == TickEvent.Phase.END) {
+			val client = Minecraft.getInstance()
+			if (client.player == null)
+				return
+
+			for (key in listOf(client.options.keyUp, client.options.keyLeft, client.options.keyRight, client.options.keyDown, client.options.keyJump, client.options.keyShift, client.options.keyUse, client.options.keyAttack, HexicalKeybinds.TELEPATHY_KEYBIND, HexicalKeybinds.EVOKE_KEYBIND)) {
+				if (previousState.keys.contains(key.name)) {
+					if (previousState[key.name] == true && !key.isDown) {
+						HexicalNetworking.sendToServer(ServerPeripheralReceiver.KeyPressPacket(key.name, false))
+					} else if (previousState[key.name] == false && key.isDown) {
+						HexicalNetworking.sendToServer(ServerPeripheralReceiver.KeyPressPacket(key.name, true))
 					}
 				}
 
-				previousState[key.translationKey] = key.isPressed
+				previousState[key.name] = key.isDown
 			}
 		}
+	}
 
-		MouseScrollCallback.EVENT.register { delta ->
-			if (HexicalKeybinds.TELEPATHY_KEYBIND.isPressed) {
-				val buf = PacketByteBufs.create()
-				buf.writeInt(delta.toInt())
-				ClientPlayNetworking.send(ServerPeripheralReceiver.SCROLL_CHANNEL, buf)
-				return@register true
-			}
-			return@register false
+	fun initMouseCallback(event: InputEvent.MouseScrollingEvent) {
+		if (HexicalKeybinds.TELEPATHY_KEYBIND.isDown) {
+			HexicalNetworking.sendToServer(ServerPeripheralReceiver.ScrollPacket(event.scrollDelta.toInt()))
+			event.isCanceled = true
 		}
+		event.isCanceled = false
 	}
 }

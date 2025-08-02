@@ -11,6 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.event.AddReloadListenerEvent
+import net.minecraftforge.common.MinecraftForge
 import net.minecraft.server.packs.resources.ResourceManager
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener
 import net.minecraft.server.packs.PackType
@@ -25,28 +26,28 @@ object DyeDataHook : InitHook() {
 	private val blockFamilies = HashMap<String, MutableMap<String, String>>()
 	private val itemFamilies = HashMap<String, MutableMap<String, String>>()
 
-    @Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-    object ReloadListener {
-        @SubscribeEvent
-        fun onAddReloadListeners(event: AddReloadListenerEvent) {
-            event.addListener(object : SimplePreparableReloadListener<Unit>() {
-                override fun prepare(manager: ResourceManager, profiler: ProfilerFiller): Unit = Unit
+	override fun init() {
+		MinecraftForge.EVENT_BUS.register(::initReloadListenerEvent)
+	}
 
-                override fun apply(prepared: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
-                    flatBlockLookup.clear()
-                    flatItemLookup.clear()
-                    blockFamilies.clear()
-                    itemFamilies.clear()
+	fun initReloadListenerEvent(event: AddReloadListenerEvent) {
+		event.addListener(object : SimplePreparableReloadListener<Unit>() {
+			override fun prepare(manager: ResourceManager, profiler: ProfilerFiller): Unit = Unit
 
-                    manager.listResources("dyes") { loc -> loc.path.endsWith(".json") }.forEach { (id, resource) ->
-                        resource.open().use { stream ->
-                            loadData(stream)
-                        }
-                    }
-                }
-            })
-        }
-    }
+			override fun apply(prepared: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
+				flatBlockLookup.clear()
+				flatItemLookup.clear()
+				blockFamilies.clear()
+				itemFamilies.clear()
+
+				manager.listResources("dyes") { loc -> loc.path.endsWith(".json") }.forEach { (id, resource) ->
+					resource.open().use { stream ->
+						loadData(stream)
+					}
+				}
+			}
+		})
+	}
 
 	fun isDyeable(block: Block): Boolean = flatBlockLookup.containsKey(ForgeRegistries.BLOCKS.getKey(block).toString())
 	fun isDyeable(item: Item): Boolean = flatItemLookup.containsKey(ForgeRegistries.ITEMS.getKey(item).toString())

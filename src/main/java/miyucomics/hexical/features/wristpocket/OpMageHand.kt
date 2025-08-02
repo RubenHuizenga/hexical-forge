@@ -11,8 +11,8 @@ import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import miyucomics.hexical.casting.mishaps.NeedsWristpocketMishap
-import miyucomics.hexical.utils.WristpocketUtils
+import miyucomics.hexical.features.wristpocket.NeedsWristpocketMishap
+import miyucomics.hexical.features.wristpocket.WristpocketUtils
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack

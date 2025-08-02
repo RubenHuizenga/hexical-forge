@@ -8,7 +8,7 @@ import at.petrak.hexcasting.api.casting.getList
 import at.petrak.hexcasting.api.casting.getVec3
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import at.petrak.hexcasting.api.utils.putCompound
+import at.petrak.hexcasting.api.utils.putList
 import miyucomics.hexical.inits.HexicalItems
 import miyucomics.hexical.misc.CastingUtils
 import miyucomics.hexical.misc.HexSerialization
@@ -28,7 +28,7 @@ object OpConjureHextito : SpellAction {
 	private data class Spell(val position: Vec3, val hex: List<Iota>) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
 			val stack = ItemStack(HexicalItems.HEXTITO_ITEM.get(), 1)
-			stack.orCreateTag.putCompound("hex", HexSerialization.serializeHex(hex))
+			stack.orCreateTag.putList("hex", HexSerialization.serializeHex(hex))
 			val entity = ItemEntity(env.world, position.x, position.y, position.z, stack)
 			entity.setPickUpDelay(1) // should be nearly imperceptible but allows for hextito quines
 			env.world.addFreshEntity(entity)

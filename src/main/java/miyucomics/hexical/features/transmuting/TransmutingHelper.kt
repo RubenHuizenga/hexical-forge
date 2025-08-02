@@ -9,35 +9,42 @@ import miyucomics.hexical.features.media_jar.MediaJarItem
 import miyucomics.hexical.features.transmuting.TransmutingRecipe.Type
 import miyucomics.hexical.inits.HexicalBlocks
 import miyucomics.hexical.misc.InitHook
-import net.minecraft.inventory.SimpleInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.recipe.RecipeType
-import net.minecraft.registry.Registries
-import net.minecraft.registry.Registry
-import net.minecraft.world.World
+import net.minecraft.world.SimpleContainer
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.crafting.RecipeType
+import net.minecraftforge.registries.ForgeRegistries
+import net.minecraft.core.Registry
+import net.minecraft.world.level.Level
 import kotlin.math.min
 import net.minecraftforge.registries.RegisterEvent
+import net.minecraftforge.common.MinecraftForge
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
+import net.minecraftforge.registries.DeferredRegister
+import net.minecraftforge.registries.RegistryObject
 
 object TransmutingHelper : InitHook() {
-	lateinit var TRANSMUTING_RECIPE: RecipeType<TransmutingRecipe>
+	private val RECIPE_TYPES = DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, HexicalMain.MOD_ID)
 
-	override fun init(event: RegisterEvent) {
-        if (event.registryKey == Registries.RECIPE_TYPE) {
-            event.register(Registries.RECIPE_TYPE, HexicalMain.id("transmuting")) {
-                TransmutingRecipe.Type.INSTANCE
-            }
-            TRANSMUTING_RECIPE = TransmutingRecipe.Type.INSTANCE
-        }
-        
-        if (event.registryKey == Registries.RECIPE_SERIALIZER) {
-            event.register(Registries.RECIPE_SERIALIZER, HexicalMain.id("transmuting")) {
-                TransmutingSerializer.INSTANCE
-            }
-        }
-    }
+	val TRANSMUTING_RECIPE: RegistryObject<RecipeType<TransmutingRecipe>> = 
+    	RECIPE_TYPES.register("transmuting") { TransmutingRecipe.Type.INSTANCE }
 
-	fun transmuteItem(world: World, stack: ItemStack, media: Long, insertMedia: (Long) -> Long, withdrawMedia: (Long) -> Boolean): TransmutationResult {
-		if (stack.isOf(HexItems.BATTERY)) {
+	override fun init() {
+		RECIPE_TYPES.register(MOD_BUS)
+		
+		MOD_BUS.addListener(::registerSerializers)
+	}
+	
+	
+	private fun registerSerializers(event: RegisterEvent) {
+		if (event.registryKey == ForgeRegistries.RECIPE_SERIALIZERS.registryKey) {
+			event.register(ForgeRegistries.RECIPE_SERIALIZERS.registryKey, HexicalMain.id("transmuting")) {
+				TransmutingSerializer.INSTANCE
+			}
+		}
+	}
+
+	fun transmuteItem(world: Level, stack: ItemStack, media: Long, insertMedia: (Long) -> Long, withdrawMedia: (Long) -> Boolean): TransmutationResult {
+		if (stack.`is`(HexItems.BATTERY)) {
 			val mediaHolder = IXplatAbstractions.INSTANCE.findMediaHolder(stack)!!
 			val given = min(mediaHolder.maxMedia - mediaHolder.media, media)
 			mediaHolder.insertMedia(given, false)
@@ -45,8 +52,8 @@ object TransmutingHelper : InitHook() {
 			return TransmutationResult.RefilledHolder
 		}
 
-		if (stack.isOf(HexicalBlocks.MEDIA_JAR_ITEM) && stack.hasNbt() && stack.nbt!!.contains("BlockEntityTag")) {
-			val jarData = stack.nbt!!.getCompound("BlockEntityTag")
+		if (stack.`is`(HexicalBlocks.MEDIA_JAR_ITEM.get()) && stack.hasTag() && stack.tag!!.contains("BlockEntityTag")) {
+			val jarData = stack.tag!!.getCompound("BlockEntityTag")
 			val given = min(MediaJarBlock.MAX_CAPACITY - MediaJarItem.getMedia(jarData), media)
 			MediaJarItem.insertMedia(jarData, given)
 			withdrawMedia(given)
@@ -62,7 +69,7 @@ object TransmutingHelper : InitHook() {
 
 		val recipe = getRecipe(stack, world)
 		if (recipe != null && media >= recipe.cost) {
-			stack.decrement(1)
+			stack.shrink(1)
 			withdrawMedia(recipe.cost)
 			return TransmutationResult.TransmutedItems(recipe.output.map { it.copy() })
 		}
@@ -70,9 +77,9 @@ object TransmutingHelper : InitHook() {
 		return TransmutationResult.Pass
 	}
 
-	private fun getRecipe(input: ItemStack, world: World): TransmutingRecipe? {
-		world.recipeManager.listAllOfType(TRANSMUTING_RECIPE).forEach { recipe ->
-			if (recipe.matches(SimpleInventory(input), world))
+	private fun getRecipe(input: ItemStack, world: Level): TransmutingRecipe? {
+		world.recipeManager.getAllRecipesFor(TRANSMUTING_RECIPE.get()).forEach { recipe ->
+			if (recipe.matches(SimpleContainer(input), world))
 				return recipe
 		}
 		return null

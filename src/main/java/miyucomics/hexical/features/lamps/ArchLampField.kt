@@ -5,18 +5,18 @@ import at.petrak.hexcasting.api.utils.serializeToNBT
 import at.petrak.hexcasting.api.utils.vecFromNBT
 import miyucomics.hexical.features.player.getHexicalPlayerManager
 import miyucomics.hexical.features.player.types.PlayerField
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.util.math.Vec3d
+import net.minecraft.world.entity.player.Player
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.world.phys.Vec3
 
 class ArchLampField : PlayerField {
-	var position: Vec3d = Vec3d.ZERO
-	var rotation: Vec3d = Vec3d.ZERO
-	var velocity: Vec3d = Vec3d.ZERO
-	var storage: NbtCompound = NbtCompound()
+	var position: Vec3 = Vec3.ZERO
+	var rotation: Vec3 = Vec3.ZERO
+	var velocity: Vec3 = Vec3.ZERO
+	var storage: CompoundTag = CompoundTag()
 	var time: Long = 0
 
-	override fun readNbt(compound: NbtCompound) {
+	override fun readNbt(compound: CompoundTag) {
 		if (!compound.contains("arch_lamp"))
 			return
 		val archLampData = compound.getCompound("arch_lamp")
@@ -27,8 +27,8 @@ class ArchLampField : PlayerField {
 		this.time = archLampData.getLong("time")
 	}
 
-	override fun writeNbt(compound: NbtCompound) {
-		compound.putCompound("arch_lamp", NbtCompound().also {
+	override fun writeNbt(compound: CompoundTag) {
+		compound.putCompound("arch_lamp", CompoundTag().also {
 			it.put("position", this.position.serializeToNBT())
 			it.put("rotation", this.rotation.serializeToNBT())
 			it.put("velocity", this.velocity.serializeToNBT())
@@ -38,4 +38,4 @@ class ArchLampField : PlayerField {
 	}
 }
 
-fun PlayerEntity.getArchLampField() = this.getHexicalPlayerManager().get(ArchLampField::class)
+fun Player.getArchLampField() = this.getHexicalPlayerManager().get(ArchLampField::class)

@@ -10,35 +10,35 @@ import miyucomics.hexical.features.transmuting.TransmutingHelper
 import miyucomics.hexical.inits.HexicalBlocks
 import miyucomics.hexical.inits.HexicalSounds
 import miyucomics.hexical.misc.RenderUtils
-import net.minecraft.block.Block
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.entity.ItemEntity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.inventory.Inventory
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket
-import net.minecraft.sound.SoundCategory
-import net.minecraft.text.Text
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.level.block.*
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.Container
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.sounds.SoundSource
+import net.minecraft.network.chat.Component
+import net.minecraft.core.BlockPos
 import kotlin.math.max
 import kotlin.math.min
 
-class MediaJarBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(HexicalBlocks.MEDIA_JAR_BLOCK_ENTITY, pos, state), Inventory {
+class MediaJarBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(HexicalBlocks.MEDIA_JAR_BLOCK_ENTITY.get(), pos, state), Container {
 	private var media: Long = 0
 	private var heldStack = ItemStack.EMPTY
 
-	fun scryingLensOverlay(lines: MutableList<Pair<ItemStack, Text>>) {
-		lines.add(Pair(ItemStack(HexItems.AMETHYST_DUST), Text.translatable("hexcasting.tooltip.media", RenderUtils.DUST_AMOUNT.format(media.toFloat() / MediaConstants.DUST_UNIT.toFloat()))))
+	fun scryingLensOverlay(lines: MutableList<Pair<ItemStack, Component>>) {
+		lines.add(Pair(ItemStack(HexItems.AMETHYST_DUST), Component.translatable("hexcasting.tooltip.media", RenderUtils.DUST_AMOUNT.format(media.toFloat() / MediaConstants.DUST_UNIT.toFloat()))))
 	}
 
 	fun getMedia() = this.media
 	private fun setMedia(media: Long) {
 		this.media = max(min(media, MediaJarBlock.MAX_CAPACITY), 0)
-		markDirty()
-		if (!world!!.isClient)
-			world!!.updateListeners(pos, cachedState, cachedState, Block.NOTIFY_ALL)
+		setChanged()
+		if (!level!!.isClientSide)
+			level!!.sendBlockUpdated(worldPosition, blockState, blockState, Block.UPDATE_ALL)
 	}
 	fun insertMedia(media: Long): Long {
 		val currentMedia = this.media
@@ -55,59 +55,59 @@ class MediaJarBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(Hexica
 		}
 	}
 
-	override fun writeNbt(nbt: NbtCompound) {
+	override fun saveAdditional(nbt: CompoundTag) {
 		nbt.putLong("media", media)
 		nbt.putCompound("heldStack", heldStack.serializeToNBT())
 	}
 
-	override fun readNbt(nbt: NbtCompound) {
+	override fun load(nbt: CompoundTag) {
 		this.media = nbt.getLong("media")
-		this.heldStack = ItemStack.fromNbt(nbt.getCompound("heldStack"))
+		this.heldStack = ItemStack.of(nbt.getCompound("heldStack"))
 	}
 
-	override fun size() = 1
-	override fun canPlayerUse(playerEntity: PlayerEntity) = false
-	override fun getStack(i: Int): ItemStack = if (i == 0) heldStack else ItemStack.EMPTY
+	override fun getContainerSize() = 1
+	override fun stillValid(playerEntity: Player) = false
+	override fun getItem(i: Int): ItemStack = if (i == 0) heldStack else ItemStack.EMPTY
 	override fun isEmpty() = heldStack.isEmpty
 
-	override fun removeStack(i: Int, amount: Int): ItemStack {
+	override fun removeItem(i: Int, amount: Int): ItemStack {
 		if (i == 0) {
-			markDirty()
+			setChanged()
 			return heldStack.split(amount)
 		}
 		return ItemStack.EMPTY
 	}
 
-	override fun removeStack(i: Int): ItemStack {
+	override fun removeItemNoUpdate(i: Int): ItemStack {
 		if (i == 0) {
 			val originalHeld = heldStack
 			heldStack = ItemStack.EMPTY
-			markDirty()
+			setChanged()
 			return originalHeld
 		}
 		return ItemStack.EMPTY
 	}
 
-	override fun setStack(i: Int, stack: ItemStack) {
+	override fun setItem(i: Int, stack: ItemStack) {
 		if (i != 0)
 			return
-		if (world == null)
+		if (level == null)
 			return
 
-		when (val result = TransmutingHelper.transmuteItem(world!!, stack, getMedia(), ::insertMedia, ::withdrawMedia)) {
+		when (val result = TransmutingHelper.transmuteItem(level!!, stack, getMedia(), ::insertMedia, ::withdrawMedia)) {
 			is TransmutationResult.AbsorbedMedia -> {
-				world!!.playSound(null, pos, HexicalSounds.AMETHYST_MELT, SoundCategory.BLOCKS, 1f, 1f)
+				level!!.playSound(null, worldPosition, HexicalSounds.AMETHYST_MELT.get(), SoundSource.BLOCKS, 1f, 1f)
 				heldStack = stack
 			}
 			is TransmutationResult.TransmutedItems -> {
 				val outputs = result.output.toMutableList()
 				heldStack = outputs.removeFirst().copy()
-				val spawnPosition = pos.down().toCenterPos()
-				outputs.forEach { world!!.spawnEntity(ItemEntity(world!!, spawnPosition.x, spawnPosition.y, spawnPosition.z, it.copy(), 0.0, 0.0, 0.0)) }
-				world!!.playSound(null, pos, HexicalSounds.ITEM_DUNKS, SoundCategory.BLOCKS, 1f, 1f)
+				val spawnPosition = worldPosition.below().getCenter()
+				outputs.forEach { level!!.addFreshEntity(ItemEntity(level!!, spawnPosition.x, spawnPosition.y, spawnPosition.z, it.copy(), 0.0, 0.0, 0.0)) }
+				level!!.playSound(null, worldPosition, HexicalSounds.ITEM_DUNKS.get(), SoundSource.BLOCKS, 1f, 1f)
 			}
 			is TransmutationResult.RefilledHolder -> {
-				world!!.playSound(null, pos, HexicalSounds.ITEM_DUNKS, SoundCategory.BLOCKS, 1f, 1f)
+				level!!.playSound(null, worldPosition, HexicalSounds.ITEM_DUNKS.get(), SoundSource.BLOCKS, 1f, 1f)
 				heldStack = stack
 			}
 			is TransmutationResult.Pass -> {
@@ -115,14 +115,14 @@ class MediaJarBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(Hexica
 			}
 		}
 
-		markDirty()
+		setChanged()
 	}
 
-	override fun clear() {
+	override fun clearContent() {
 		heldStack = ItemStack.EMPTY
-		markDirty()
+		setChanged()
 	}
 
-	override fun toInitialChunkDataNbt(): NbtCompound = createNbt()
-	override fun toUpdatePacket(): BlockEntityUpdateS2CPacket = BlockEntityUpdateS2CPacket.create(this)
+	override fun getUpdateTag(): CompoundTag = saveWithoutMetadata()
+	override fun getUpdatePacket(): ClientboundBlockEntityDataPacket = ClientboundBlockEntityDataPacket.create(this)
 }

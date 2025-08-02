@@ -7,35 +7,35 @@ import at.petrak.hexcasting.api.item.IotaHolderItem
 import at.petrak.hexcasting.api.utils.*
 import miyucomics.hexical.inits.HexicalSounds
 import miyucomics.hexical.misc.HexSerialization
-import net.minecraft.client.item.TooltipContext
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.Item
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtElement
-import net.minecraft.sound.SoundCategory
-import net.minecraft.text.Text
-import net.minecraft.util.Formatting
-import net.minecraft.util.Hand
-import net.minecraft.util.Rarity
-import net.minecraft.util.TypedActionResult
-import net.minecraft.world.World
+import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.Tag
+import net.minecraft.sounds.SoundSource
+import net.minecraft.network.chat.Component
+import net.minecraft.ChatFormatting
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.item.Rarity
+import net.minecraft.world.InteractionResultHolder
+import net.minecraft.world.level.Level
 
-class ScarabBeetleItem : Item(Settings().maxCount(1).rarity(Rarity.UNCOMMON)), IotaHolderItem {
-	override fun use(world: World, user: PlayerEntity, hand: Hand): TypedActionResult<ItemStack> {
-		val stack = user.getStackInHand(hand)
-		val nbt = stack.orCreateNbt
+class ScarabBeetleItem : Item(Properties().stacksTo(1).rarity(Rarity.UNCOMMON)), IotaHolderItem {
+	override fun use(world: Level, user: Player, hand: InteractionHand): InteractionResultHolder<ItemStack> {
+		val stack = user.getItemInHand(hand)
+		val nbt = stack.orCreateTag
 		nbt.putBoolean("active", !nbt.getBoolean("active"))
-		if (world.isClient)
-			world.playSound(user.x, user.y, user.z, HexicalSounds.SCARAB_CHIRPS, SoundCategory.MASTER, 1f, 1f, true)
-		return TypedActionResult.success(stack)
+		if (world.isClientSide)
+			world.playLocalSound(user.x, user.y, user.z, HexicalSounds.SCARAB_CHIRPS.get(), SoundSource.MASTER, 1f, 1f, true)
+		return InteractionResultHolder.success(stack)
 	}
 
-	override fun appendTooltip(stack: ItemStack, world: World?, tooltip: MutableList<Text>, context: TooltipContext) {
-		val nbt = stack.nbt ?: return
+	override fun appendHoverText(stack: ItemStack, world: Level?, tooltip: MutableList<Component>, context: TooltipFlag) {
+		val nbt = stack.tag ?: return
 		if (!nbt.contains("hex"))
 			return
-		tooltip.add("hexical.scarab.hex".asTranslatedComponent(stack.getList("hex", NbtElement.COMPOUND_TYPE.toInt())!!.fold(Text.empty()) { acc, curr -> acc.append(IotaType.getDisplay(curr.asCompound)) }).styledWith(Formatting.GRAY))
-		super.appendTooltip(stack, world, tooltip, context)
+		tooltip.add("hexical.scarab.hex".asTranslatedComponent(stack.getList("hex", Tag.TAG_COMPOUND.toInt())!!.fold(Component.empty()) { acc, curr -> acc.append(IotaType.getDisplay(curr.asCompound)) }).styledWith(ChatFormatting.GRAY))
+		super.appendHoverText(stack, world, tooltip, context)
 	}
 
 	override fun readIotaTag(stack: ItemStack) = null

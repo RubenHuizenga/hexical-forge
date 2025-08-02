@@ -3,32 +3,35 @@ package miyucomics.hexical.features.autographs
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import miyucomics.hexical.misc.ClientStorage
 import miyucomics.hexical.misc.InitHook
-import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.text.Text
-import net.minecraft.util.Formatting
-import net.minecraft.util.math.Vec3d
+import net.minecraftforge.event.entity.player.ItemTooltipEvent
+import net.minecraftforge.common.MinecraftForge
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import net.minecraft.network.chat.Component
+import net.minecraft.ChatFormatting
+import net.minecraft.world.phys.Vec3
 import java.util.function.Consumer
 
 object AutographTooltip : InitHook() {
 	override fun init() {
-		ItemTooltipCallback.EVENT.register { stack, _, lines ->
-			val nbt = stack.nbt ?: return@register
-			if (!nbt.contains("autographs"))
-				return@register
+		MinecraftForge.EVENT_BUS.register(::initItemTooltipCallbackCurio)
+	}
 
-			lines.add(Text.translatable("hexical.autograph.header").styled { style -> style.withColor(Formatting.GRAY) })
+	fun initItemTooltipCallbackCurio(event: ItemTooltipEvent) {
+		val nbt = event.itemStack.tag ?: return
+		if (!nbt.contains("autographs"))
+			return
 
-			nbt.getList("autographs", NbtCompound.COMPOUND_TYPE.toInt()).forEach(Consumer { element: NbtElement? ->
-				val compound = element as NbtCompound
-				val name = compound.getString("name")
-				val pigment = FrozenPigment.fromNBT(compound.getCompound("pigment")).colorProvider
-				val output = Text.literal("")
-				for (i in 0 until name.length)
-					output.append(Text.literal(name[i].toString()).styled { style -> style.withColor(pigment.getColor((ClientStorage.ticks * 3).toFloat(), Vec3d(0.0, i.toDouble(), 0.0))) })
-				lines.add(output)
-			})
-		}
+		event.toolTip.add(Component.translatable("hexical.autograph.header").withStyle { style -> style.withColor(ChatFormatting.GRAY) })
+
+		nbt.getList("autographs", CompoundTag.TAG_COMPOUND.toInt()).forEach(Consumer { element: Tag? ->
+			val compound = element as CompoundTag
+			val name = compound.getString("name")
+			val pigment = FrozenPigment.fromNBT(compound.getCompound("pigment")).colorProvider
+			val output = Component.literal("")
+			for (i in 0 until name.length)
+				output.append(Component.literal(name[i].toString()).withStyle { style -> style.withColor(pigment.getColor((ClientStorage.ticks * 3).toFloat(), Vec3(0.0, i.toDouble(), 0.0))) })
+			event.toolTip.add(output)
+		})
 	}
 }

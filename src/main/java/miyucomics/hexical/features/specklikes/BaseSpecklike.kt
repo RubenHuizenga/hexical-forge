@@ -2,7 +2,7 @@ package miyucomics.hexical.features.specklikes
 
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import at.petrak.hexcasting.api.utils.putCompound
-import miyucomics.hexical.interfaces.Specklike
+import miyucomics.hexical.features.specklikes.Specklike
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityDimensions
 import net.minecraft.world.entity.Pose

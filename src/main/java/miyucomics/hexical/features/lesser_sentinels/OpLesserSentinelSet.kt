@@ -8,7 +8,7 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
-import miyucomics.hexical.interfaces.PlayerEntityMinterface
+import miyucomics.hexical.features.player.PlayerEntityMinterface
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.phys.Vec3
 

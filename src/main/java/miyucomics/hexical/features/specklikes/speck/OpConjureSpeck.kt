@@ -11,7 +11,7 @@ import at.petrak.hexcasting.api.casting.iota.PatternIota
 import at.petrak.hexcasting.api.casting.math.HexDir
 import at.petrak.hexcasting.api.casting.math.HexPattern
 import at.petrak.hexcasting.api.misc.MediaConstants
-import miyucomics.hexical.entities.specklikes.SpeckEntity
+import miyucomics.hexical.features.specklikes.speck.SpeckEntity
 import miyucomics.hexical.inits.HexicalAdvancements
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.server.level.ServerPlayer

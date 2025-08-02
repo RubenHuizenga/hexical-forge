@@ -1,6 +1,6 @@
 package miyucomics.hexical.features.media_jar
 
-import miyucomics.hexical.registry.HexicalRenderLayers
+import miyucomics.hexical.features.media_jar.MediaJarShader
 import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.client.renderer.MultiBufferSource
 import com.mojang.blaze3d.vertex.PoseStack
@@ -14,7 +14,7 @@ object MediaJarRenderStuffs {
 	fun renderFluid(matrices: PoseStack, vertexConsumers: MultiBufferSource, filled: Float, offset: Vector3f = Vector3f(0f)) {
 		if (filled == 0f)
 			return
-		val consumer = vertexConsumers.getBuffer(MediaJarShader.mediaJarRenderLayer)
+		val consumer = vertexConsumers.getBuffer(MediaJarShader.mediaJar())
 		matrices.pushPose()
 		matrices.translate(0.5f, 1f / 16f, 0.5f)
 		addRectangularPrism(consumer, matrices, height = filled * 12f / 16f, offset)

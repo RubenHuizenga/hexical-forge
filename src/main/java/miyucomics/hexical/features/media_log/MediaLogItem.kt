@@ -1,8 +1,5 @@
 package miyucomics.hexical.features.media_log
 
-import miyucomics.hexical.data.LedgerData
-import miyucomics.hexical.registry.HexicalNetworking
-import miyucomics.hexical.screens.LedgerScreen
 import miyucomics.hexical.misc.ClientStorage
 import net.minecraft.client.Minecraft
 import net.minecraft.world.entity.player.Player

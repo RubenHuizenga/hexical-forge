@@ -6,7 +6,7 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
-import miyucomics.hexical.interfaces.PlayerEntityMinterface
+import miyucomics.hexical.features.player.PlayerEntityMinterface
 import net.minecraft.server.level.ServerPlayer
 
 object OpLesserSentinelGet : ConstMediaAction {

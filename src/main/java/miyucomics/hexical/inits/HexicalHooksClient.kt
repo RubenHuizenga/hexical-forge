@@ -19,6 +19,7 @@ import miyucomics.hexical.features.player.PlayerAnimatorHook
 import miyucomics.hexical.features.scarabs.ScarabWingRenderer
 import miyucomics.hexical.features.shaders.ClientShaderReceiver
 import miyucomics.hexical.misc.InitHook
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
 
 object HexicalHooksClient {
 	private val hooks = mutableListOf<InitHook>()
@@ -36,11 +37,11 @@ object HexicalHooksClient {
 		register(CharmedItemTooltip)
 		register(CrackedItemTooltip)
 		register(ClientShaderReceiver)
-		register(CompassCurioModelHook)
 		register(ScarabWingRenderer)
 		register(MediaJarRenderHooks)
 		register(MediaJarShader)
 		register(ArchLampModelProvider)
+		register(CompassCurioModelHook)
 		register(HandbellCurioItemModel)
 		register(PlayerAnimatorHook)
 

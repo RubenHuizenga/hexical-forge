@@ -2,7 +2,7 @@ package miyucomics.hexical.features.confection
 
 import at.petrak.hexcasting.api.casting.eval.vm.CastingVM
 import at.petrak.hexcasting.xplat.IXplatAbstractions
-import miyucomics.hexical.casting.environments.HextitoCastEnv
+import miyucomics.hexical.features.confection.HextitoCastEnv
 import miyucomics.hexical.misc.HexSerialization
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.food.FoodProperties

@@ -2,6 +2,7 @@ package miyucomics.hexical.features.periwinkle
 
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.inits.HexicalBlocks
+import miyucomics.hexical.misc.InitHook
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectCategory
 import net.minecraft.world.effect.MobEffectInstance
@@ -25,7 +26,7 @@ import net.minecraft.core.Registry
 import thedarkcolour.kotlinforforge.forge.MOD_BUS
 
 @Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-object HexicalPotions {
+object WooleyedEffectRegister : InitHook() {
 	private val EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, HexicalMain.MOD_ID)
     private val POTIONS = DeferredRegister.create(ForgeRegistries.POTIONS, HexicalMain.MOD_ID)
 
@@ -41,7 +42,7 @@ object HexicalPotions {
         Potion(MobEffectInstance(WOOLEYED_EFFECT.get(), 6000, 1)) 
     }
 
-	fun init() {
+	override fun init() {
 		EFFECTS.register(MOD_BUS)
         POTIONS.register(MOD_BUS)
 	}

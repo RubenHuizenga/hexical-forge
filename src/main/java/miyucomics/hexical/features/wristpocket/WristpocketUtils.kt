@@ -2,7 +2,7 @@ package miyucomics.hexical.features.wristpocket
 
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.eval.env.PlayerBasedCastEnv
-import miyucomics.hexical.interfaces.PlayerEntityMinterface
+import miyucomics.hexical.features.player.PlayerEntityMinterface
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.entity.player.Player
 

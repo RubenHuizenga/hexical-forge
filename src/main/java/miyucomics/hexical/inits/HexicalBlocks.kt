@@ -59,50 +59,43 @@ object HexicalBlocks {
 
 	val HEX_CANDLE_BLOCK: RegistryObject<HexCandleBlock> = BLOCKS.register("hex_candle") { HexCandleBlock() }
 	val HEX_CANDLE_CAKE_BLOCK: RegistryObject<HexCandleCakeBlock> = BLOCKS.register("hex_candle_cake") { HexCandleCakeBlock() }
+
 	val MAGE_BLOCK: RegistryObject<MageBlock> = BLOCKS.register("mage_block") { MageBlock() }
 	val MEDIA_JAR_BLOCK: RegistryObject<MediaJarBlock> = BLOCKS.register("media_jar") { MediaJarBlock() }
 	
 	@JvmField
 	val CASTING_CARPET: RegistryObject<CarpetBlock> = BLOCKS.register("casting_carpet") {
-		CarpetBlock(Properties.of()
-			.mapColor(MapColor.COLOR_PURPLE)
-			.strength(0.1f)
-			.sound(SoundType.WOOL)
-			.ignitedByLava())
+		CarpetBlock(Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(0.1f).sound(SoundType.WOOL).ignitedByLava())
+	}
+	val CASTING_CARPET_ITEM: RegistryObject<Item> = ITEMS.register("casting_carpet") {
+		BlockItem(CASTING_CARPET.get(), Item.Properties())
 	}
 
 	@JvmField
 	val SENTINEL_BED_BLOCK: RegistryObject<Block> = BLOCKS.register("sentinel_bed") {
 		Block(Properties.copy(Blocks.DEEPSLATE_TILES).strength(4f, 6f))
 	}
-	val PERIWINKLE_FLOWER: RegistryObject<PinkPetalsBlock> = BLOCKS.register("periwinkle") {
-		PinkPetalsBlock(Properties.of()
-			.mapColor(MapColor.COLOR_PURPLE)
-			.noCollission()
-			.sound(SoundType.PINK_PETALS)
-			.pushReaction(PushReaction.DESTROY))
-	}
-	val PEDESTAL_BLOCK: RegistryObject<PedestalBlock> = BLOCKS.register("pedestal") { PedestalBlock() }
 
-	val HEX_CANDLE_ITEM: RegistryObject<Item> = ITEMS.register("hex_candle") {
-		BlockItem(HEX_CANDLE_BLOCK.get(), Item.Properties())
-	}
-	val CASTING_CARPET_ITEM: RegistryObject<Item> = ITEMS.register("casting_carpet") {
-		BlockItem(CASTING_CARPET.get(), Item.Properties())
-	}
-	val SENTINEL_BED_ITEM: RegistryObject<Item> = ITEMS.register("sentinel_bed") {
-		BlockItem(SENTINEL_BED_BLOCK.get(), Item.Properties())
+	val PERIWINKLE_FLOWER: RegistryObject<PinkPetalsBlock> = BLOCKS.register("periwinkle") {
+		PinkPetalsBlock(Properties.of().mapColor(MapColor.COLOR_PURPLE).noCollission().sound(SoundType.PINK_PETALS).pushReaction(PushReaction.DESTROY))
 	}
 	val PERIWINKLE_FLOWER_ITEM: RegistryObject<Item> = ITEMS.register("periwinkle") {
 		BlockItem(PERIWINKLE_FLOWER.get(), Item.Properties())
 	}
+
+	@JvmField
+	val MEDIA_JAR_ITEM: RegistryObject<Item> = ITEMS.register("media_jar") { MediaJarItem() }
+	val HEX_CANDLE_ITEM: RegistryObject<Item> = ITEMS.register("hex_candle") {
+		BlockItem(HEX_CANDLE_BLOCK.get(), Item.Properties())
+	}
+	val SENTINEL_BED_ITEM: RegistryObject<Item> = ITEMS.register("sentinel_bed") {
+		BlockItem(SENTINEL_BED_BLOCK.get(), Item.Properties())
+	}
+
+	val PEDESTAL_BLOCK: RegistryObject<PedestalBlock> = BLOCKS.register("pedestal") { PedestalBlock() }
 	val PEDESTAL_ITEM: RegistryObject<Item> = ITEMS.register("pedestal") {
 		BlockItem(PEDESTAL_BLOCK.get(), Item.Properties())
 	}
-	val MAGE_BLOCK_ITEM: RegistryObject<Item> = ITEMS.register("mage_block") {
-		BlockItem(MAGE_BLOCK.get(), Item.Properties())
-	}
-	val MEDIA_JAR_ITEM: RegistryObject<Item> = ITEMS.register("media_jar") { MediaJarItem() }
 
   	val HEX_CANDLE_BLOCK_ENTITY: RegistryObject<BlockEntityType<HexCandleBlockEntity>> = 
 		BLOCK_ENTITIES.register("hex_candle") {
@@ -140,8 +133,11 @@ object HexicalBlocks {
 			).build(null)
 		}
 
-
 	fun init() {
+		ITEMS.register("mage_block") {
+			BlockItem(MAGE_BLOCK.get(), Item.Properties())
+		}
+
 		BLOCKS.register(MOD_BUS)
 		ITEMS.register(MOD_BUS)
 		BLOCK_ENTITIES.register(MOD_BUS)
@@ -161,10 +157,8 @@ object HexicalBlocks {
 		}
 	}
 
-	fun clientInit(event: FMLClientSetupEvent) {
-		ScryingLensOverlayRegistry.addDisplayer(MEDIA_JAR_BLOCK.get()) { lines: MutableList<Pair<ItemStack, Component>>, _: BlockState, pos: BlockPos, _: Player, world: Level, _: Direction -> (world.getBlockEntity(pos) as MediaJarBlockEntity).scryingLensOverlay(lines) }
-		event.enqueueWork {
-            BlockEntityRenderers.register(MEDIA_JAR_BLOCK_ENTITY.get(), ::MediaJarBlockEntityRenderer)
-        }
+	fun clientInit() {
+		// Set in the blockmodel json instead with "render_type": "minecraft:cutout"
+		// BlockRenderLayerMap.INSTANCE.putBlock(PERIWINKLE_FLOWER, RenderLayer.getCutout())
 	}
 }

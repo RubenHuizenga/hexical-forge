@@ -5,10 +5,10 @@ import at.petrak.hexcasting.common.lib.HexItems
 import com.google.gson.JsonObject
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.features.transmuting.TransmutingJsonProvider
-import net.minecraft.item.Item
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.recipe.Ingredient
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.world.item.crafting.Ingredient
 
 object Transmutations {
 	val transmutationRecipeJsons = mutableListOf<TransmutingJsonProvider>()
@@ -25,7 +25,7 @@ object Transmutations {
 	}
 
 	fun makeTransmutation(name: String, original: Item, new: Item, cost: Long) {
-		transmutationRecipeJsons.add(TransmutingJsonProvider(HexicalMain.id("transmuting/$name"), Ingredient.ofItems(original), listOf(ItemStack(new)), cost))
+		transmutationRecipeJsons.add(TransmutingJsonProvider(HexicalMain.id("transmuting/$name"), Ingredient.of(original), listOf(ItemStack(new)), cost))
 		transmutationRecipePages.add(createTransmutingPage(name))
 	}
 

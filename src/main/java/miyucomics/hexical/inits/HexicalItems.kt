@@ -1,8 +1,11 @@
 package miyucomics.hexical.inits
 
+import at.petrak.hexcasting.common.items.magic.ItemPackagedHex
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.common.items.ItemStaff
 import at.petrak.hexcasting.xplat.IXplatAbstractions
+import at.petrak.hexcasting.api.utils.putCompound
+import at.petrak.hexcasting.api.utils.putList
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.features.animated_scrolls.AnimatedScrollItem
 import miyucomics.hexical.features.confection.HexburstItem
@@ -30,13 +33,20 @@ import net.minecraft.world.item.*
 import net.minecraftforge.registries.RegisterEvent
 import thedarkcolour.kotlinforforge.forge.MOD_BUS
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.ChatFormatting
+import net.minecraft.world.level.Level
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.InteractionResultHolder
+import net.minecraft.nbt.CompoundTag
 
 object HexicalItems {
 	private val ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, HexicalMain.MOD_ID)
 	private val HEXICAL_TAB = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, HexicalMain.MOD_ID)
 	val HEXICAL_GROUP: RegistryObject<CreativeModeTab> = HEXICAL_TAB.register("general") {
 		CreativeModeTab.builder()
-			.icon { ItemStack(CONJURED_COMPASS_ITEM.get()) }
+			.icon { ItemStack(CURIO_COMPASS.get()) }
 			.title(Component.translatable("itemGroup.hexical.general"))
 			.displayItems { _, output ->
 				val handLamp = ItemStack(HAND_LAMP_ITEM.get())
@@ -62,12 +72,8 @@ object HexicalItems {
 				output.accept(ItemStack(SCARAB_BEETLE_ITEM.get()))
 				output.accept(ItemStack(GRIMOIRE_ITEM.get()))
 
-				output.accept(HEXXY.get())
-				output.accept(IRISSY.get())
-				output.accept(PENTXXY.get())
-				output.accept(QUADXXY.get())
-				output.accept(THOTHY.get())
-				output.accept(FLEXXY.get())
+				for (item in PLUSHIES)
+					output.accept(item.get())
 			}
 			.build()
 	}
@@ -77,9 +83,6 @@ object HexicalItems {
 	
 	@JvmField
 	val ARCH_LAMP_ITEM = ITEMS.register("arch_lamp") { ArchLampItem() }
-	
-	@JvmField
-	val CONJURED_COMPASS_ITEM = ITEMS.register("conjured_compass") { ConjuredCompassItem() }
 	
 	@JvmField
 	val GRIMOIRE_ITEM = ITEMS.register("grimoire") { GrimoireItem() }
@@ -102,73 +105,59 @@ object HexicalItems {
 	val MEDIA_LOG_ITEM = ITEMS.register("media_log") { MediaLogItem() }
 	
 	val CURIO_NAMES: List<String> = listOf("bismuth", "clover", "compass", "conch", "cube", "flute", "handbell", "heart", "interlock", "key", "staff", "charm", "strange", "beauty", "truth", "up", "down")
-	val CURIOS: List<Item> = CURIO_NAMES.map { registerItem("curio_$it", CurioItem.getCurioFromName(it)) }
+	val CURIOS: List<RegistryObject<Item>> = CURIO_NAMES.map { ITEMS.register("curio_$it") { CurioItem.getCurioFromName(it) }}
 	@JvmField val CURIO_COMPASS = CURIOS[CURIO_NAMES.indexOf("compass")]
 	@JvmField val CURIO_FLUTE = CURIOS[CURIO_NAMES.indexOf("flute")]
 	@JvmField val CURIO_HANDBELL = CURIOS[CURIO_NAMES.indexOf("handbell")]
 	@JvmField val CURIO_STAFF = CURIOS[CURIO_NAMES.indexOf("staff")]
 
 	@JvmField
-	val LEI = ITEMS.register("lei") { LeiItem() }
+	val LEI = ITEMS.register("lei") { LeiItem }
 	val GAUNTLET_STAFF = ITEMS.register("gauntlet_staff") { ItemStaff(Properties().stacksTo(1)) }
 	val LIGHTNING_ROD_STAFF = ITEMS.register("lightning_rod_staff") { ItemStaff(Properties().stacksTo(1)) }
 	val TCHOTCHKE_ITEM = ITEMS.register("tchotchke") { TchotchkeItem() }
-	val HEXXY = ITEMS.register("plush_hexxy") { Item(Properties().stacksTo(1)) }
-	val IRISSY = ITEMS.register("plush_irissy") { Item(Properties().stacksTo(1)) }
-	val PENTXXY = ITEMS.register("plush_pentxxy") { Item(Properties().stacksTo(1)) }
-	val QUADXXY = ITEMS.register("plush_quadxxy") { Item(Properties().stacksTo(1)) }
-	val THOTHY = ITEMS.register("plush_thothy") { Item(Properties().stacksTo(1)) }
-	val FLEXXY = ITEMS.register("plush_flexxy") { Item(Properties().stacksTo(1)) }
+
+	val PLUSHIE_NAMES: List<String> = listOf("hexxy", "irissy", "pentxxy", "quadxxy", "thothy", "flexxy")
+	val PLUSHIES: List<RegistryObject<Item>> = PLUSHIE_NAMES.map { ITEMS.register("plush_$it") { Item(Properties().stacksTo(1)) }}
 
 	@JvmStatic
-	fun randomPlush(): ItemStack {
-		val itemType = listOf(HEXXY, IRISSY, PENTXXY, QUADXXY, THOTHY, FLEXXY).random().get()
-		return ItemStack(itemType)
-	}
+	fun randomPlush() = ItemStack(PLUSHIES.random().get())
 
 	fun init() {
 		ITEMS.register(MOD_BUS)
 		HEXICAL_TAB.register(MOD_BUS)
-		registerItem("tchotchke", TchotchkeItem())
-	}
-
-	fun clientInit() {
-		ArchLampItem.registerModelPredicate()
-		ConjuredCompassItem.registerModelPredicate()
-		ScarabBeetleItem.registerModelPredicate()
 	}
 }
 
-
-class TchotchkeItem : ItemPackagedHex(Settings().maxCount(1)) {
+class TchotchkeItem : ItemPackagedHex(Properties().stacksTo(1)) {
 	override fun canDrawMediaFromInventory(stack: ItemStack) = false
-	override fun isItemBarVisible(stack: ItemStack) = false
+	override fun isBarVisible(stack: ItemStack) = false
 	override fun canRecharge(stack: ItemStack) = false
 	override fun breakAfterDepletion() = true
 	override fun cooldown() = 0
 
-	override fun use(world: World, player: PlayerEntity, usedHand: Hand): TypedActionResult<ItemStack> {
-		if (world.isClient)
-			return TypedActionResult.success(player.getStackInHand(usedHand))
-		val stack = player.getStackInHand(usedHand)
+	override fun use(world: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
+		if (world.isClientSide)
+			return InteractionResultHolder.success(player.getItemInHand(usedHand))
+		val stack = player.getItemInHand(usedHand)
 		if (hasHex(stack) && getMedia(stack) > 0) {
 			val charmed = ItemStack(Items.STICK)
-			val nbt = charmed.orCreateNbt
-			val charm = NbtCompound()
+			val nbt = charmed.orCreateTag
+			val charm = CompoundTag()
 			charm.putLong("media", getMedia(stack))
 			charm.putLong("max_media", getMaxMedia(stack))
-			charm.putList("hex", HexSerialization.serializeHex(getHex(stack, world as ServerWorld)!!))
+			charm.putList("hex", HexSerialization.serializeHex(getHex(stack, world as ServerLevel)!!))
 			charm.putBoolean("left", true)
 			charm.putBoolean("right", true)
 			charm.putBoolean("left_sneak", true)
 			charm.putBoolean("right_sneak", true)
 			nbt.putCompound("charmed", charm)
-			player.setStackInHand(usedHand, charmed)
+			player.setItemInHand(usedHand, charmed)
 		}
-		return TypedActionResult.success(player.getStackInHand(usedHand))
+		return InteractionResultHolder.success(player.getItemInHand(usedHand))
 	}
 
-	override fun appendTooltip(stack: ItemStack, world: World?, lines: MutableList<Text>, advanced: TooltipContext) {
-		lines.add(Text.literal("Right-click this item to get a charmed stick.").formatted(Formatting.RED))
+	override fun appendHoverText(stack: ItemStack, world: Level?, lines: MutableList<Component>, advanced: TooltipFlag) {
+		lines.add(Component.literal("Right-click this item to get a charmed stick.").withStyle(ChatFormatting.RED))
 	}
 }

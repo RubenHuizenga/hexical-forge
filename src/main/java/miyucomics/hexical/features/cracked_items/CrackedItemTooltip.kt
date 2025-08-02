@@ -7,34 +7,38 @@ import at.petrak.hexcasting.common.items.magic.ItemPackagedHex
 import miyucomics.hexical.features.charms.CharmUtilities
 import miyucomics.hexical.features.curios.CurioItem
 import miyucomics.hexical.misc.InitHook
-import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback
-import net.minecraft.nbt.NbtElement
-import net.minecraft.nbt.NbtList
-import net.minecraft.text.Text
-import net.minecraft.util.Formatting
+import net.minecraftforge.event.entity.player.ItemTooltipEvent
+import net.minecraftforge.common.MinecraftForge
+import net.minecraft.nbt.Tag
+import net.minecraft.nbt.ListTag
+import net.minecraft.network.chat.Component
+import net.minecraft.ChatFormatting
 
 object CrackedItemTooltip : InitHook() {
 	override fun init() {
-		ItemTooltipCallback.EVENT.register { stack, _, lines ->
-			val nbt = stack.nbt ?: return@register
-			if (stack.item !is ItemPackagedHex || !nbt.getBoolean("cracked"))
-				return@register
-			if (nbt.contains(ItemPackagedHex.TAG_PROGRAM))
-				lines.add("hexical.cracked.hex".asTranslatedComponent(nbt.getList(ItemPackagedHex.TAG_PROGRAM, NbtElement.COMPOUND_TYPE.toInt())))
-			else
-				lines.add("hexical.cracked.cracked".asTranslatedComponent.formatted(Formatting.GOLD))
-		}
-
-		ItemTooltipCallback.EVENT.register { stack, _, lines ->
-			val nbt = stack.nbt ?: return@register
-			if (stack.item !is CurioItem || !nbt.getBoolean("cracked"))
-				return@register
-			if (CharmUtilities.isStackCharmed(stack))
-				lines.add("hexical.cracked.hex".asTranslatedComponent(getText(CharmUtilities.getCompound(stack).getList("hex", NbtElement.COMPOUND_TYPE.toInt()))))
-			else
-				lines.add("hexical.cracked.cracked".asTranslatedComponent.formatted(Formatting.GOLD))
-		}
+		MinecraftForge.EVENT_BUS.register(::initItemTooltipCallback)
+		MinecraftForge.EVENT_BUS.register(::initItemTooltipCallbackCurio)
 	}
 
-	private fun getText(hex: NbtList) = hex.fold(Text.empty()) { acc, curr -> acc.append(IotaType.getDisplay(curr.asCompound)) }
+	fun initItemTooltipCallback(event: ItemTooltipEvent) {
+		val nbt = event.itemStack.tag ?: return
+			if (event.itemStack.item !is ItemPackagedHex || !nbt.getBoolean("cracked"))
+				return
+			if (nbt.contains(ItemPackagedHex.TAG_PROGRAM))
+				event.toolTip.add("hexical.cracked.hex".asTranslatedComponent(nbt.getList(ItemPackagedHex.TAG_PROGRAM, Tag.TAG_COMPOUND.toInt())))
+			else
+				event.toolTip.add("hexical.cracked.cracked".asTranslatedComponent.withStyle(ChatFormatting.GOLD))
+	}
+
+	fun initItemTooltipCallbackCurio(event: ItemTooltipEvent) {
+		val nbt = event.itemStack.tag ?: return
+		if (event.itemStack.item !is CurioItem || !nbt.getBoolean("cracked"))
+			return
+		if (CharmUtilities.isStackCharmed(event.itemStack))
+			event.toolTip.add("hexical.cracked.hex".asTranslatedComponent(getText(CharmUtilities.getCompound(event.itemStack).getList("hex", Tag.TAG_COMPOUND.toInt()))))
+		else
+			event.toolTip.add("hexical.cracked.cracked".asTranslatedComponent.withStyle(ChatFormatting.GOLD))
+	}
+
+	private fun getText(hex: ListTag) = hex.fold(Component.empty()) { acc, curr -> acc.append(IotaType.getDisplay(curr.asCompound)) }
 }

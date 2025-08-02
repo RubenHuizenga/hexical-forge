@@ -12,15 +12,15 @@ import at.petrak.hexcasting.api.utils.putCompound
 import at.petrak.hexcasting.api.utils.putList
 import miyucomics.hexical.misc.CastingUtils
 import miyucomics.hexical.misc.HexSerialization
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.CompoundTag
 
 object OpCharmItem : SpellAction {
 	override val argc = 5
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
 		val item = args.getItemEntity(0, argc)
 		env.assertEntityInRange(item)
-		if (CharmUtilities.isStackCharmed(item.stack))
+		if (CharmUtilities.isStackCharmed(item.item))
 			throw MishapBadEntity.of(item, "uncharmed_item")
 		val hex = args.getList(1, argc).toList()
 		CastingUtils.assertNoTruename(args[1], env)
@@ -38,15 +38,15 @@ object OpCharmItem : SpellAction {
 		}
 
 		return SpellAction.Result(
-			Spell(item.stack, hex, (battery * MediaConstants.DUST_UNIT).toLong(), normalInputs, sneakInputs),
+			Spell(item.item, hex, (battery * MediaConstants.DUST_UNIT).toLong(), normalInputs, sneakInputs),
 			3 * MediaConstants.CRYSTAL_UNIT + MediaConstants.DUST_UNIT * battery.toInt(),
-			listOf(ParticleSpray.burst(item.pos, 1.0))
+			listOf(ParticleSpray.burst(item.position(), 1.0))
 		)
 	}
 
 	private data class Spell(val stack: ItemStack, val hex: List<Iota>, val battery: Long, val normalInputs: List<Int>, val sneakInputs: List<Int>) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			stack.orCreateNbt.putCompound("charmed", NbtCompound().also {
+			stack.orCreateTag.putCompound("charmed", CompoundTag().also {
 				it.putLong("media", battery)
 				it.putLong("max_media", battery)
 				it.putList("hex", HexSerialization.serializeHex(hex))

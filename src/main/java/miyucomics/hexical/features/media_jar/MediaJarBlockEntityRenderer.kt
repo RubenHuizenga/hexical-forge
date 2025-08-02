@@ -1,14 +1,15 @@
 package miyucomics.hexical.features.media_jar
 
-import net.minecraft.client.render.VertexConsumerProvider
-import net.minecraft.client.render.block.entity.BlockEntityRenderer
-import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.util.math.BlockPos
+import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider
+import com.mojang.blaze3d.vertex.PoseStack
+import net.minecraft.core.BlockPos
 import org.joml.Vector3f
 
-class MediaJarBlockEntityRenderer : BlockEntityRenderer<MediaJarBlockEntity> {
-	override fun render(jar: MediaJarBlockEntity, tickDelta: Float, matrices: MatrixStack, vertexConsumers: VertexConsumerProvider, light: Int, overlay: Int) {
-		MediaJarRenderStuffs.renderFluid(matrices, vertexConsumers, jar.getMedia().toFloat() / MediaJarBlock.MAX_CAPACITY.toFloat(), hashBlockPos(jar.pos))
+class MediaJarBlockEntityRenderer(private val context: BlockEntityRendererProvider.Context) : BlockEntityRenderer<MediaJarBlockEntity> {
+	override fun render(jar: MediaJarBlockEntity, tickDelta: Float, matrices: PoseStack, vertexConsumers: MultiBufferSource, light: Int, overlay: Int) {
+		MediaJarRenderStuffs.renderFluid(matrices, vertexConsumers, jar.getMedia().toFloat() / MediaJarBlock.MAX_CAPACITY.toFloat(), hashBlockPos(jar.worldPosition))
 	}
 
 	companion object {
@@ -33,4 +34,10 @@ class MediaJarBlockEntityRenderer : BlockEntityRenderer<MediaJarBlockEntity> {
 			return Vector3f(xf, yf, zf)
 		}
 	}
+}
+
+object MediaJarRendererFactory : BlockEntityRendererProvider<MediaJarBlockEntity> {
+    override fun create(context: BlockEntityRendererProvider.Context): BlockEntityRenderer<MediaJarBlockEntity> {
+        return MediaJarBlockEntityRenderer(context)
+    }
 }

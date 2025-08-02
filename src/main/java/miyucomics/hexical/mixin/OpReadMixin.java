@@ -21,7 +21,7 @@ import java.util.List;
 public class OpReadMixin {
 	@Inject(method = "execute", at = @At("HEAD"), cancellable = true)
 	private void readCompass(List<? extends Iota> args, CastingEnvironment env, CallbackInfoReturnable<List<Iota>> cir) {
-		CastingEnvironment.HeldItemInfo data = env.getHeldItemToOperateOn(item -> item.is(HexicalItems.CURIO_COMPASS));
+		CastingEnvironment.HeldItemInfo data = env.getHeldItemToOperateOn(item -> item.is(HexicalItems.CURIO_COMPASS.get()));
 		if (data == null)
 			return;
 

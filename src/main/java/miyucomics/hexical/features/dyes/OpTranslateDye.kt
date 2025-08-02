@@ -4,7 +4,7 @@ import at.petrak.hexcasting.api.casting.asActionResult
 import at.petrak.hexcasting.api.casting.castables.ConstMediaAction
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
-import miyucomics.hexical.casting.iotas.getTrueDye
+import miyucomics.hexical.features.dyes.getTrueDye
 import net.minecraft.world.phys.Vec3
 
 object OpTranslateDye : ConstMediaAction {

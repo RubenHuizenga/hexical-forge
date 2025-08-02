@@ -2,39 +2,39 @@ package miyucomics.hexical.features.hopper.targets
 
 import miyucomics.hexical.features.hopper.HopperDestination
 import miyucomics.hexical.features.hopper.HopperSource
-import net.minecraft.entity.decoration.ItemFrameEntity
-import net.minecraft.item.ItemStack
+import net.minecraft.world.entity.decoration.ItemFrame
+import net.minecraft.world.item.ItemStack
 
-class ItemFrameEndpoint(val frame: ItemFrameEntity) : HopperSource, HopperDestination {
+class ItemFrameEndpoint(val frame: ItemFrame) : HopperSource, HopperDestination {
 	override fun getItems(): List<ItemStack> {
-		val stack = frame.heldItemStack
+		val stack = frame.item
 		return if (stack.isEmpty) emptyList() else listOf(stack.copy())
 	}
 
 	override fun withdraw(stack: ItemStack, amount: Int): Boolean {
-		val existing = frame.heldItemStack
-		if (!ItemStack.areItemsEqual(existing, stack))
+		val existing = frame.item
+		if (!ItemStack.isSameItem(existing, stack))
 			return false
 		if (existing.count < amount)
 			return false
 		if (amount != 1)
 			return false
-		frame.setHeldItemStack(ItemStack.EMPTY, true)
+		frame.setItem(ItemStack.EMPTY, true)
 		return true
 	}
 
 	override fun deposit(stack: ItemStack): ItemStack {
-		val existing = frame.heldItemStack
+		val existing = frame.item
 		if (!existing.isEmpty)
 			return stack
 
 		val single = stack.copy()
 		single.count = 1
-		frame.setHeldItemStack(single, true)
+		frame.setItem(single, true)
 
 		return if (stack.count > 1) {
 			val leftover = stack.copy()
-			leftover.decrement(1)
+			leftover.shrink(1)
 			leftover
 		} else {
 			ItemStack.EMPTY
@@ -42,7 +42,7 @@ class ItemFrameEndpoint(val frame: ItemFrameEntity) : HopperSource, HopperDestin
 	}
 
 	override fun simulateDeposit(stack: ItemStack): Int {
-		val existing = frame.heldItemStack
+		val existing = frame.item
 		if (!existing.isEmpty)
 			return 0
 		if (stack.isEmpty)

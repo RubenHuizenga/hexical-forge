@@ -5,9 +5,9 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.IotaType
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
-import miyucomics.hexical.casting.mishaps.NeedsArchGenieLampMishap
-import miyucomics.hexical.interfaces.PlayerEntityMinterface
-import miyucomics.hexical.items.hasActiveArchLamp
+import miyucomics.hexical.features.lamps.NeedsArchLampMishap
+import miyucomics.hexical.features.player.PlayerEntityMinterface
+import miyucomics.hexical.features.lamps.hasActiveArchLamp
 import miyucomics.hexical.misc.CastingUtils
 import net.minecraft.server.level.ServerPlayer
 

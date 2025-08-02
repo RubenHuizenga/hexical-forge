@@ -10,8 +10,8 @@ import miyucomics.hexical.features.peripherals.KeybindTicker
 import miyucomics.hexical.features.player.types.PlayerField
 import miyucomics.hexical.features.player.types.PlayerTicker
 import miyucomics.hexical.features.wristpocket.WristpocketField
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.nbt.NbtCompound
+import net.minecraft.world.entity.player.Player
+import net.minecraft.nbt.CompoundTag
 import kotlin.reflect.KClass
 
 class PlayerManager {
@@ -34,25 +34,25 @@ class PlayerManager {
 		registerTicker(KeybindTicker())
 	}
 
-	fun tick(player: PlayerEntity) {
+	fun tick(player: Player) {
 		for (ticker in tickers)
 			ticker.tick(player)
 	}
 
-	fun readNbt(compound: NbtCompound) {
+	fun readNbt(compound: CompoundTag) {
 		for (field in fields.values)
 			field.readNbt(compound)
 	}
 
-	fun writeNbt(compound: NbtCompound) {
+	fun writeNbt(compound: CompoundTag) {
 		for (field in fields.values)
 			field.writeNbt(compound)
 	}
 
-	fun handleRespawn(new: PlayerEntity, old: PlayerEntity) {
+	fun handleRespawn(new: Player, old: Player) {
 		for (field in fields)
 			field.value.handleRespawn(new, old)
 	}
 }
 
-fun PlayerEntity.getHexicalPlayerManager() = (this as PlayerEntityMinterface).getPlayerManager()
+fun Player.getHexicalPlayerManager() = (this as PlayerEntityMinterface).getPlayerManager()

@@ -11,7 +11,7 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import miyucomics.hexical.data.prestidigitation.PrestidigitationHandlersHook
+import miyucomics.hexical.features.prestidigitation.PrestidigitationHandlersHook
 import net.minecraft.world.entity.Entity
 import net.minecraft.core.BlockPos
 import net.minecraft.world.phys.Vec3

@@ -4,10 +4,6 @@ import at.petrak.hexcasting.common.blocks.BlockConjured
 import miyucomics.hexical.inits.HexicalBlocks
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.level.block.*
-import net.minecraft.world.level.block.*
-import net.minecraft.world.level.block.*
-import net.minecraft.world.level.block.*
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.BlockItem

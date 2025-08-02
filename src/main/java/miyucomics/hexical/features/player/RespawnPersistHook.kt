@@ -1,12 +1,17 @@
 package miyucomics.hexical.features.player
 
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.common.MinecraftForge
 import miyucomics.hexical.misc.InitHook
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
 
 object RespawnPersistHook : InitHook() {
+	// I think this is the Forge equivalent of Fabrics AFTER_RESPAWN
 	override fun init() {
-		ServerPlayerEvents.AFTER_RESPAWN.register { old, new, alive ->
-			new.getHexicalPlayerManager().handleRespawn(new, old)
-		}
+		MinecraftForge.EVENT_BUS.register(::initPlayerAfterRespawn)
+	}
+
+	fun initPlayerAfterRespawn(event: PlayerEvent.Clone) {
+		if (event.isWasDeath)
+			event.getEntity().getHexicalPlayerManager().handleRespawn(event.getEntity(), event.getOriginal())
 	}
 }

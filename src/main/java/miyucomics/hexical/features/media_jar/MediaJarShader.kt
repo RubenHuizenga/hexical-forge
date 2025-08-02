@@ -1,6 +1,7 @@
 package miyucomics.hexical.features.media_jar
 
 import miyucomics.hexical.HexicalMain
+import miyucomics.hexical.misc.InitHook
 import net.minecraft.Util
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.client.renderer.ShaderInstance
@@ -12,22 +13,24 @@ import net.minecraftforge.api.distmarker.OnlyIn
 import net.minecraftforge.client.event.RegisterShadersEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.common.MinecraftForge
 import java.io.IOException
 import java.util.function.Function
 import com.mojang.blaze3d.vertex.VertexFormat
 import com.mojang.blaze3d.vertex.DefaultVertexFormat
 
-@Mod.EventBusSubscriber(value = [Dist.CLIENT], modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-object HexicalRenderLayers {
+object MediaJarShader : InitHook() {
    	val PERLIN_NOISE: ResourceLocation = HexicalMain.id("textures/misc/perlin.png")
 
     fun mediaJar(): RenderType {
         return CustomRenderTypes.MEDIA_JAR.apply(PERLIN_NOISE)
     }
 
-    @SubscribeEvent
-    @OnlyIn(Dist.CLIENT)
-    fun registerShaders(event: RegisterShadersEvent) {
+    override fun init() {
+        MinecraftForge.EVENT_BUS.register(::initRegisterShadersEvent)
+    }
+    
+    fun initRegisterShadersEvent(event: RegisterShadersEvent) {
         event.registerShader(
             ShaderInstance(
                 event.resourceProvider,

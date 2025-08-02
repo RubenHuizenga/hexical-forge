@@ -13,10 +13,10 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.api.pigment.FrozenPigment
 import at.petrak.hexcasting.common.lib.HexItems
-import miyucomics.hexical.casting.iotas.getDye
-import miyucomics.hexical.casting.iotas.getTrueDye
-import miyucomics.hexical.casting.mishaps.DyeableMishap
-import miyucomics.hexical.data.DyeData
+import miyucomics.hexical.features.dyes.getDye
+import miyucomics.hexical.features.dyes.getTrueDye
+import miyucomics.hexical.features.dyes.DyeableMishap
+import miyucomics.hexical.features.dyes.DyeDataHook
 import miyucomics.hexical.features.specklikes.Specklike
 import net.minecraft.world.level.block.*
 import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity
@@ -157,7 +157,7 @@ object OpDye : SpellAction {
 						.setValue(StainedGlassPaneBlock.WEST, state.getValue(StainedGlassPaneBlock.WEST))
 						.setValue(StainedGlassPaneBlock.WATERLOGGED, state.getValue(StainedGlassPaneBlock.WATERLOGGED))
 				)
-				else -> env.world.setBlockAndUpdate(position, DyeData.getNewBlock(state.block, dye))
+				else -> env.world.setBlockAndUpdate(position, DyeDataHook.getNewBlock(state.block, dye))
 			}
 		}
 	}

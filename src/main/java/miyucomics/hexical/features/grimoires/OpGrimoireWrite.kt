@@ -10,8 +10,9 @@ import at.petrak.hexcasting.api.casting.math.HexPattern
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadOffhandItem
 import at.petrak.hexcasting.api.utils.containsTag
 import at.petrak.hexcasting.api.utils.getCompound
+import at.petrak.hexcasting.api.utils.putList
 import at.petrak.hexcasting.api.utils.putCompound
-import miyucomics.hexical.casting.patterns.grimoire.OpGrimoireIndex.Companion.populateGrimoireMetadata
+import miyucomics.hexical.features.grimoires.OpGrimoireIndex.populateGrimoireMetadata
 import miyucomics.hexical.inits.HexicalItems
 import miyucomics.hexical.misc.CastingUtils
 import miyucomics.hexical.misc.HexSerialization
@@ -40,7 +41,7 @@ object OpGrimoireWrite : SpellAction {
 		override fun cast(env: CastingEnvironment) {
 			if (!stack.orCreateTag.contains("expansions"))
 				stack.orCreateTag.putCompound("expansions", CompoundTag())
-			stack.orCreateTag.getCompound("expansions").putCompound(key.anglesSignature(), HexSerialization.serializeHex(expansion))
+			stack.orCreateTag.getCompound("expansions").putList(key.anglesSignature(), HexSerialization.serializeHex(expansion))
 
 			if (!stack.orCreateTag.contains("metadata"))
 				stack.orCreateTag.putCompound("metadata", CompoundTag())

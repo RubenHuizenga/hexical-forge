@@ -50,57 +50,44 @@ object HexicalAdvancements {
 }
 
 abstract class BaseCriterion<T : BaseCriterion.BaseCondition>(private val id: ResourceLocation) : SimpleCriterionTrigger<T>() {
+	override fun createInstance(obj: JsonObject, playerPredicate: ContextAwarePredicate, predicateDeserializer: DeserializationContext): T = createCondition()
+	abstract class BaseCondition(id: ResourceLocation) : AbstractCriterionTriggerInstance(id, ContextAwarePredicate.ANY)
+	fun trigger(player: ServerPlayer) = trigger(player) { true }
+	protected abstract fun createCondition(): T
 	override fun getId(): ResourceLocation = id
-	
-	override fun createInstance(
-		json: JsonObject,
-		predicate: ContextAwarePredicate,
-		deserializer: DeserializationContext
-	): T = createCondition(predicate)
-
-	abstract class BaseCondition(
-		id: ResourceLocation,
-		predicate: ContextAwarePredicate
-	) : AbstractCriterionTriggerInstance(id, predicate)
-	
-	fun trigger(player: ServerPlayer) {
-		this.trigger(player) { true }
-	}
-	
-	protected abstract fun createCondition(predicate: ContextAwarePredicate): T
 }
 
 class ConjureCakeCriterion : BaseCriterion<ConjureCakeCriterion.Condition>(HexicalMain.id("conjure_cake")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("conjure_cake"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("conjure_cake"))
 }
 
 class DIYCriterion : BaseCriterion<DIYCriterion.Condition>(HexicalMain.id("diy_conjuring")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("diy_conjuring"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("diy_conjuring"))
 }
 
 class HexxyCriterion : BaseCriterion<HexxyCriterion.Condition>(HexicalMain.id("summon_hexxy")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("summon_hexxy"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("summon_hexxy"))
 }
 
 class HallucinateCriterion : BaseCriterion<HallucinateCriterion.Condition>(HexicalMain.id("hallucinate")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("hallucinate"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("hallucinate"))
 }
 
 class EducateGenieCriterion : BaseCriterion<EducateGenieCriterion.Condition>(HexicalMain.id("educate_genie")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("educate_genie"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("educate_genie"))
 }
 
 class ReloadLampCriterion : BaseCriterion<ReloadLampCriterion.Condition>(HexicalMain.id("reload_lamp")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("reload_lamp"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("reload_lamp"))
 }
 
 class SpecklikeCriterion : BaseCriterion<SpecklikeCriterion.Condition>(HexicalMain.id("specklike")) {
-	override fun createCondition(predicate: ContextAwarePredicate) = Condition(predicate)
-	class Condition(predicate: ContextAwarePredicate) : BaseCondition(HexicalMain.id("specklike"), predicate)
+	override fun createCondition() = Condition()
+	class Condition() : BaseCondition(HexicalMain.id("specklike"))
 }

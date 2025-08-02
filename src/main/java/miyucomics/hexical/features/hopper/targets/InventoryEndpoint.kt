@@ -2,23 +2,23 @@ package miyucomics.hexical.features.hopper.targets
 
 import miyucomics.hexical.features.hopper.HopperDestination
 import miyucomics.hexical.features.hopper.HopperSource
-import net.minecraft.inventory.Inventory
-import net.minecraft.item.ItemStack
+import net.minecraft.world.Container
+import net.minecraft.world.item.ItemStack
 
-class InventoryEndpoint(val inventory: Inventory) : HopperSource, HopperDestination {
+class InventoryEndpoint(val inventory: Container) : HopperSource, HopperDestination {
 	override fun getItems(): List<ItemStack> {
-		return (0 until inventory.size()).map { inventory.getStack(it).copy() }.filterNot { it.isEmpty }
+		return (0 until inventory.containerSize).map { inventory.getItem(it).copy() }.filterNot { it.isEmpty }
 	}
 
 	override fun withdraw(stack: ItemStack, amount: Int): Boolean {
 		var remaining = amount
 
-		for (i in 0 until inventory.size()) {
-			val existing = inventory.getStack(i)
-			if (!ItemStack.areItemsEqual(existing, stack)) continue
+		for (i in 0 until inventory.containerSize) {
+			val existing = inventory.getItem(i)
+			if (!ItemStack.isSameItem(existing, stack)) continue
 			if (existing.isEmpty) continue
 			val toTake = remaining.coerceAtMost(existing.count)
-			remaining -= inventory.removeStack(i, toTake).count
+			remaining -= inventory.removeItem(i, toTake).count
 			if (remaining <= 0) return true
 		}
 
@@ -29,30 +29,30 @@ class InventoryEndpoint(val inventory: Inventory) : HopperSource, HopperDestinat
 		val remaining = stack.copy()
 
 		// First, try to merge into existing stacks
-		for (i in 0 until inventory.size()) {
-			if (!inventory.isValid(i, remaining)) continue
-			val existing = inventory.getStack(i)
-			if (!ItemStack.canCombine(existing, remaining)) continue
+		for (i in 0 until inventory.containerSize) {
+			if (!inventory.canPlaceItem(i, remaining)) continue
+			val existing = inventory.getItem(i)
+			if (!ItemStack.isSameItemSameTags(existing, remaining)) continue
 
-			val canAdd = existing.maxCount - existing.count
+			val canAdd = existing.getMaxStackSize() - existing.count
 			val toAdd = remaining.count.coerceAtMost(canAdd)
 			if (toAdd > 0) {
-				existing.increment(toAdd)
-				remaining.decrement(toAdd)
+				existing.grow(toAdd)
+				remaining.shrink(toAdd)
 				if (remaining.isEmpty) return ItemStack.EMPTY
 			}
 		}
 
-		for (i in 0 until inventory.size()) {
-			if (!inventory.isValid(i, remaining)) continue
-			val existing = inventory.getStack(i)
+		for (i in 0 until inventory.containerSize) {
+			if (!inventory.canPlaceItem(i, remaining)) continue
+			val existing = inventory.getItem(i)
 			if (!existing.isEmpty) continue
 
 			val toPlace = remaining.copy()
-			val placedCount = toPlace.count.coerceAtMost(toPlace.maxCount)
+			val placedCount = toPlace.count.coerceAtMost(toPlace.getMaxStackSize())
 			toPlace.count = placedCount
-			inventory.setStack(i, toPlace)
-			remaining.decrement(placedCount)
+			inventory.setItem(i, toPlace)
+			remaining.shrink(placedCount)
 
 			if (remaining.isEmpty) return ItemStack.EMPTY
 		}
@@ -62,22 +62,22 @@ class InventoryEndpoint(val inventory: Inventory) : HopperSource, HopperDestinat
 
 	override fun simulateDeposit(stack: ItemStack): Int {
 		var remaining = stack.count
-		val maxStackSize = stack.maxCount
+		val maxStackSize = stack.maxStackSize
 
-		for (i in 0 until inventory.size()) {
-			val existing = inventory.getStack(i)
-			if (!inventory.isValid(i, stack)) continue
-			if (ItemStack.canCombine(existing, stack)) {
-				val space = existing.maxCount - existing.count
+		for (i in 0 until inventory.containerSize) {
+			val existing = inventory.getItem(i)
+			if (!inventory.canPlaceItem(i, stack)) continue
+			if (ItemStack.isSameItemSameTags(existing, stack)) {
+				val space = existing.maxStackSize - existing.count
 				val toInsert = remaining.coerceAtMost(space)
 				remaining -= toInsert
 				if (remaining <= 0) return stack.count
 			}
 		}
 
-		for (i in 0 until inventory.size()) {
-			val existing = inventory.getStack(i)
-			if (!inventory.isValid(i, stack)) continue
+		for (i in 0 until inventory.containerSize) {
+			val existing = inventory.getItem(i)
+			if (!inventory.canPlaceItem(i, stack)) continue
 			if (!existing.isEmpty) continue
 
 			val toInsert = remaining.coerceAtMost(maxStackSize)

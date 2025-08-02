@@ -7,7 +7,7 @@ import at.petrak.hexcasting.api.casting.getPositiveIntUnderInclusive
 import at.petrak.hexcasting.api.casting.getVec3
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.misc.MediaConstants
-import miyucomics.hexical.particles.SparkleParticleEffect
+import miyucomics.hexical.features.particles.SparkleParticleEffect
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector3f
 

@@ -7,7 +7,7 @@ import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadOffhandItem
 import at.petrak.hexcasting.api.misc.MediaConstants
 import at.petrak.hexcasting.common.items.magic.ItemPackagedHex
-import miyucomics.hexical.casting.mishaps.IllegalJailbreakMishap
+import miyucomics.hexical.features.cracked_items.IllegalJailbreakMishap
 import miyucomics.hexical.features.charms.CharmUtilities
 import miyucomics.hexical.features.curios.CurioItem
 import net.minecraft.world.item.ItemStack

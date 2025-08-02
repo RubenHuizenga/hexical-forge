@@ -7,7 +7,6 @@ import at.petrak.hexcasting.api.casting.getList
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadOffhandItem
 import at.petrak.hexcasting.xplat.IXplatAbstractions
-import miyucomics.hexical.interfaces.GenieLamp
 import miyucomics.hexical.inits.HexicalAdvancements
 import miyucomics.hexical.inits.HexicalItems
 import miyucomics.hexical.misc.CastingUtils
@@ -18,7 +17,7 @@ object OpWish : SpellAction {
 	override val argc = 1
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
 		CastingUtils.assertNoTruename(args[0], env)
-		val stack = env.getHeldItemToOperateOn { stack -> stack.`is`(HexicalItems.HAND_LAMP_ITEM) || stack.`is`(HexicalItems.ARCH_LAMP_ITEM) }
+		val stack = env.getHeldItemToOperateOn { stack -> stack.`is`(HexicalItems.HAND_LAMP_ITEM.get()) || stack.`is`(HexicalItems.ARCH_LAMP_ITEM.get()) }
 		if (stack == null)
 			throw MishapBadOffhandItem.of(null, "lamp")
 		return SpellAction.Result(Spell(args.getList(0, argc).toList(), stack.stack), 0, listOf())

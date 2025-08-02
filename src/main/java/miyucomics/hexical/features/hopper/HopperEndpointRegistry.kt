@@ -7,21 +7,21 @@ import at.petrak.hexcasting.api.casting.iota.NullIota
 import at.petrak.hexcasting.api.casting.iota.Vec3Iota
 import miyucomics.hexical.features.hopper.targets.*
 import miyucomics.hexical.misc.InitHook
-import net.minecraft.entity.Entity
-import net.minecraft.entity.ItemEntity
-import net.minecraft.entity.decoration.ArmorStandEntity
-import net.minecraft.entity.decoration.ItemFrameEntity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.entity.vehicle.ChestBoatEntity
-import net.minecraft.entity.vehicle.ChestMinecartEntity
-import net.minecraft.entity.vehicle.HopperMinecartEntity
-import net.minecraft.inventory.Inventory
-import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.util.collection.DefaultedList
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.entity.decoration.ArmorStand
+import net.minecraft.world.entity.decoration.ItemFrame
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.entity.vehicle.ChestBoat
+import net.minecraft.world.entity.vehicle.MinecartChest
+import net.minecraft.world.entity.vehicle.MinecartHopper
+import net.minecraft.world.Container
+import net.minecraft.world.WorldlyContainer
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.core.NonNullList
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import kotlin.math.abs
 
 object HopperEndpointRegistry : InitHook() {
@@ -30,33 +30,33 @@ object HopperEndpointRegistry : InitHook() {
 	override fun init() {
 		register { iota, env, slot ->
 			val caster = env.castingEntity
-			if (iota is EntityIota && iota.entity == caster && caster is ServerPlayerEntity && slot == -1)
+			if (iota is EntityIota && iota.entity == caster && caster is ServerPlayer && slot == -1)
 				return@register WristpocketEndpoint(caster)
 			null
 		}
 
 		register { iota, env, slot ->
 			val caster = env.castingEntity
-			if (iota is EntityIota && iota.entity == caster && caster is ServerPlayerEntity)
+			if (iota is EntityIota && iota.entity == caster && caster is ServerPlayer)
 				return@register getSlottedInventory(caster.inventory, slot, iota)
 			null
 		}
 
-		registerInventoryEntity<ArmorStandEntity> { ArmorStandInventory(it.armorItems as DefaultedList<ItemStack>, it.handItems as DefaultedList<ItemStack>) }
-		registerInventoryEntity<ChestBoatEntity> { ListBackedInventory(it.inventory) }
-		registerInventoryEntity<ChestMinecartEntity> { ListBackedInventory(it.inventory) }
-		registerInventoryEntity<HopperMinecartEntity> { ListBackedInventory(it.inventory) }
+		registerInventoryEntity<ArmorStand> { ArmorStandInventory(it.getArmorSlots() as NonNullList<ItemStack>, it.getHandSlots() as NonNullList<ItemStack>) }
+		registerInventoryEntity<ChestBoat> { ListBackedInventory(it.itemStacks) }
+		registerInventoryEntity<MinecartChest> { ListBackedInventory(it.itemStacks) }
+		registerInventoryEntity<MinecartHopper> { ListBackedInventory(it.itemStacks) }
 		registerEntityEndpoint<ItemEntity> { DroppedItemEndpoint(it) }
-		registerEntityEndpoint<ItemFrameEntity> { ItemFrameEndpoint(it) }
+		registerEntityEndpoint<ItemFrame> { ItemFrameEndpoint(it) }
 
 		register { iota, env, slot ->
 			if (iota !is Vec3Iota)
 				return@register null
 			val vec = iota.vec3
-			val blockPos = BlockPos.ofFloored(vec)
+			val blockPos = BlockPos.containing(vec)
 			env.assertPosInRange(blockPos)
 			val inventory = env.world.getBlockEntity(blockPos)
-			if (inventory is SidedInventory) {
+			if (inventory is WorldlyContainer) {
 				if (slot != null)
 					return@register SlottedInventoryEndpoint(inventory, slot, iota)
 				val dx = vec.x - (blockPos.x + 0.5)
@@ -84,10 +84,10 @@ object HopperEndpointRegistry : InitHook() {
 		register { iota, env, slot ->
 			if (iota !is Vec3Iota)
 				return@register null
-			val blockPos = BlockPos.ofFloored(iota.vec3)
+			val blockPos = BlockPos.containing(iota.vec3)
 			env.assertPosInRange(blockPos)
 			val inventory = env.world.getBlockEntity(blockPos)
-			if (inventory is Inventory)
+			if (inventory is Container)
 				return@register getSlottedInventory(inventory, slot, iota)
 			null
 		}
@@ -101,8 +101,8 @@ object HopperEndpointRegistry : InitHook() {
 		}
 
 		register { iota, env, slot ->
-			if (iota is NullIota && env.castingEntity is PlayerEntity)
-				return@register getSlottedInventory((env.castingEntity as PlayerEntity).enderChestInventory, slot, iota)
+			if (iota is NullIota && env.castingEntity is Player)
+				return@register getSlottedInventory((env.castingEntity as Player).enderChestInventory, slot, iota)
 			null
 		}
 	}
@@ -115,13 +115,13 @@ object HopperEndpointRegistry : InitHook() {
 		return resolvers.firstNotNullOfOrNull { it.resolve(iota, env, slot) }
 	}
 
-	fun getSlottedInventory(inventory: Inventory, slot: Int?, iota: Iota): HopperEndpoint {
+	fun getSlottedInventory(inventory: Container, slot: Int?, iota: Iota): HopperEndpoint {
 		if (slot == null)
 			return InventoryEndpoint(inventory)
 		return SlottedInventoryEndpoint(inventory, slot, iota)
 	}
 
-	private inline fun <reified T : Entity> registerInventoryEntity(crossinline getInventory: (T) -> Inventory) {
+	private inline fun <reified T : Entity> registerInventoryEntity(crossinline getInventory: (T) -> Container) {
 		register { iota, env, slot ->
 			val entity = (iota as? EntityIota)?.entity as? T ?: return@register null
 			env.assertEntityInRange(entity)

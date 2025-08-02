@@ -3,64 +3,67 @@ package miyucomics.hexical.features.lesser_sentinels
 import at.petrak.hexcasting.xplat.IXplatAbstractions
 import com.mojang.blaze3d.systems.RenderSystem
 import miyucomics.hexical.misc.ClientStorage
-import miyucomics.hexical.misc.InitHook
 import miyucomics.hexical.misc.RenderUtils
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.render.GameRenderer
-import net.minecraft.client.render.Tessellator
-import net.minecraft.client.render.VertexFormat
-import net.minecraft.client.render.VertexFormats
-import net.minecraft.util.math.RotationAxis
-import net.minecraft.util.math.Vec2f
+import miyucomics.hexical.misc.InitHook
+import net.minecraftforge.client.event.RenderLevelStageEvent
+import net.minecraftforge.common.MinecraftForge
+import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.GameRenderer
+import com.mojang.blaze3d.vertex.Tesselator
+import com.mojang.blaze3d.vertex.VertexFormat
+import com.mojang.blaze3d.vertex.DefaultVertexFormat
+import com.mojang.math.Axis
+import net.minecraft.world.phys.Vec2
 import kotlin.math.cos
 import kotlin.math.sin
 
 object LesserSentinelRenderer : InitHook() {
 	override fun init() {
-		WorldRenderEvents.LAST.register { ctx ->
-			ClientStorage.lesserSentinels.forEach { pos ->
-				val matrices = ctx.matrixStack()
-				val camera = ctx.camera()
-				val camPos = camera.pos
+		MinecraftForge.EVENT_BUS.register(::initWorldLastRender)
+	}
 
-				matrices.push()
-				matrices.translate(pos.x - camPos.x, pos.y - camPos.y, pos.z - camPos.z)
+	fun initWorldLastRender(event: RenderLevelStageEvent) {
+		ClientStorage.lesserSentinels.forEach { pos ->
+			val matrices = event.poseStack
+			val camera = event.camera
+			val camPos = camera.position
 
-				matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-camera.yaw))
-				matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.pitch))
+			matrices.pushPose()
+			matrices.translate(pos.x - camPos.x, pos.y - camPos.y, pos.z - camPos.z)
 
-				val tessellator = Tessellator.getInstance()
-				val bufferBuilder = tessellator.buffer
+			matrices.mulPose(Axis.YP.rotationDegrees(-camera.yRot))
+			matrices.mulPose(Axis.XP.rotationDegrees(camera.xRot))
 
-				RenderSystem.disableDepthTest()
-				RenderSystem.enableBlend()
-				RenderSystem.defaultBlendFunc()
-				RenderSystem.disableCull()
-				RenderSystem.setShader(GameRenderer::getPositionColorProgram)
+			val tessellator = Tesselator.getInstance()
+			val bufferBuilder = tessellator.builder
 
-				bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR)
+			RenderSystem.disableDepthTest()
+			RenderSystem.enableBlend()
+			RenderSystem.defaultBlendFunc()
+			RenderSystem.disableCull()
+			RenderSystem.setShader(GameRenderer::getPositionColorShader)
 
-				val points = mutableListOf<Vec2f>()
-				for (i in 0..6) {
-					val angle = (i % 6) * (Math.PI / 3)
-					points.add(Vec2f(cos(angle).toFloat(), sin(angle).toFloat()).multiply(0.25f))
-				}
+			bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR)
 
-				val pigment = IXplatAbstractions.INSTANCE.getPigment(MinecraftClient.getInstance().player!!).colorProvider
-				fun makeVertex(offset: Vec2f) = bufferBuilder.vertex(matrices.peek().positionMatrix, offset.x, offset.y, 0f)
-					.color(pigment.getColor(ClientStorage.ticks.toFloat(), pos.add(offset.x.toDouble() * 2, offset.y.toDouble() * 2, 0.0)))
-					.next()
-				RenderUtils.quadifyLines(::makeVertex, 0.05f, points)
-
-				tessellator.draw()
-
-				RenderSystem.enableCull()
-				RenderSystem.disableBlend()
-				RenderSystem.enableDepthTest()
-
-				matrices.pop()
+			val points = mutableListOf<Vec2>()
+			for (i in 0..6) {
+				val angle = (i % 6) * (Math.PI / 3)
+				points.add(Vec2(cos(angle).toFloat(), sin(angle).toFloat()).scale(0.25f))
 			}
+
+			val pigment = IXplatAbstractions.INSTANCE.getPigment(Minecraft.getInstance().player!!).colorProvider
+			fun makeVertex(offset: Vec2) = bufferBuilder.vertex(matrices.last().pose(), offset.x, offset.y, 0f)
+				.color(pigment.getColor(ClientStorage.ticks.toFloat(), pos.add(offset.x.toDouble() * 2, offset.y.toDouble() * 2, 0.0)))
+				.endVertex()
+			RenderUtils.quadifyLines(::makeVertex, 0.05f, points)
+
+			tessellator.end()
+
+			RenderSystem.enableCull()
+			RenderSystem.disableBlend()
+			RenderSystem.enableDepthTest()
+
+			matrices.popPose()
 		}
 	}
 }

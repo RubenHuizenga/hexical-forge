@@ -13,13 +13,16 @@ import miyucomics.hexical.features.scarabs.ScarabHandler
 import miyucomics.hexical.features.sentinel_beds.SentinelBedAmbitHook
 import miyucomics.hexical.features.shaders.ServerShaderManager
 import miyucomics.hexical.features.transmuting.TransmutingHelper
+import miyucomics.hexical.misc.HexicalNetworking
 import miyucomics.hexical.misc.InitHook
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
 
 object HexicalHooksServer {
 	private val hooks = mutableListOf<InitHook>()
 	fun register(hook: InitHook) { hooks.add(hook) }
 
-	fun init(event: RegisterEvent) {
+	fun init() {
+		register(HexicalNetworking)
 		register(ServerCharmedUseReceiver)
 		register(ServerLesserSentinelPusher)
 		register(ServerPeripheralReceiver)
@@ -35,6 +38,6 @@ object HexicalHooksServer {
 		register(WooleyedEffectRegister)
 
 		for (hook in hooks)
-			hook.init(event)
+			hook.init()
 	}
 }

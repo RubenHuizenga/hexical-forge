@@ -1,5 +1,6 @@
 package miyucomics.hexical.mixin;
 
+import miyucomics.hexical.features.player.PlayerEntityMinterface;
 import miyucomics.hexical.features.player.PlayerManager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -23,12 +24,12 @@ public class PlayerEntityMixin implements PlayerEntityMinterface {
 		hexicalPlayerManager.tick((Player) (Object) this);
 	}
 
-	@Inject(method = "readCustomDataFromNbt", at = @At("HEAD"))
+	@Inject(method = "readAdditionalSaveData", at = @At("HEAD"))
 	void reaadPlayerData(CompoundTag compound, CallbackInfo ci) {
 		hexicalPlayerManager.readNbt(compound);
 	}
 
-	@Inject(method = "writeCustomDataToNbt", at = @At("HEAD"))
+	@Inject(method = "addAdditionalSaveData", at = @At("HEAD"))
 	void writePlayerData(CompoundTag compound, CallbackInfo ci) {
 		hexicalPlayerManager.writeNbt(compound);
 	}

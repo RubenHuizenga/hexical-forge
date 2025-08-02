@@ -12,8 +12,7 @@ import at.petrak.hexcasting.api.casting.mishaps.MishapInvalidIota
 import at.petrak.hexcasting.api.misc.MediaConstants
 import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.features.confetti.ConfettiHelper
-import miyucomics.hexical.registry.HexicalNetworking
-import miyucomics.hexical.registry.HexicalParticles
+import miyucomics.hexical.inits.HexicalParticles
 import net.minecraft.world.phys.Vec3
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket
 import net.minecraft.server.level.ServerPlayer

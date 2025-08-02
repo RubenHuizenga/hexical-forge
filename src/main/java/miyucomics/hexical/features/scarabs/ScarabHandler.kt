@@ -17,11 +17,11 @@ import miyucomics.hexical.HexicalMain
 import miyucomics.hexical.inits.HexicalItems
 import miyucomics.hexical.misc.HexSerialization
 import miyucomics.hexical.misc.InitHook
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtElement
-import net.minecraft.registry.Registry
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.Tag
+import net.minecraft.core.Registry
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.level.ServerLevel
 
 object ScarabHandler : InitHook() {
 	override fun init() {
@@ -29,7 +29,7 @@ object ScarabHandler : InitHook() {
 	}
 
 	@JvmStatic
-	fun handleScarab(vm: CastingVM, iota: PatternIota, continuation: SpellContinuation, world: ServerWorld): CastResult? {
+	fun handleScarab(vm: CastingVM, iota: PatternIota, continuation: SpellContinuation, world: ServerLevel): CastResult? {
 		val env = vm.env
 		if (env !is PlayerBasedCastEnv)
 			return null
@@ -41,8 +41,8 @@ object ScarabHandler : InitHook() {
 
 		if (wouldBeRecursive(pattern.anglesSignature(), continuation))
 			return null
-		val scarab = getScarab(env.castingEntity!! as ServerPlayerEntity) ?: return null
-		val program = HexSerialization.deserializeHex(scarab.getList("hex", NbtElement.COMPOUND_TYPE.toInt()) ?: return null, world)
+		val scarab = getScarab(env.castingEntity!! as ServerPlayer) ?: return null
+		val program = HexSerialization.deserializeHex(scarab.getList("hex", Tag.TAG_COMPOUND.toInt()) ?: return null, world)
 
 		val newStack = vm.image.stack.toMutableList()
 		newStack.add(iota)
@@ -69,12 +69,12 @@ object ScarabHandler : InitHook() {
 		return false
 	}
 
-	private fun getScarab(player: ServerPlayerEntity): ItemStack? {
+	private fun getScarab(player: ServerPlayer): ItemStack? {
 		val inventory = player.inventory
-		for (smallInventory in listOf(inventory.main, inventory.armor, inventory.offHand)) {
+		for (smallInventory in listOf(inventory.items, inventory.armor, inventory.offhand)) {
 			for (stack in smallInventory) {
-				val nbt = stack.nbt
-				if (stack.isOf(HexicalItems.SCARAB_BEETLE_ITEM) && nbt != null && nbt.getBoolean("active"))
+				val nbt = stack.tag
+				if (stack.`is`(HexicalItems.SCARAB_BEETLE_ITEM.get()) && nbt != null && nbt.getBoolean("active"))
 					return stack
 			}
 		}

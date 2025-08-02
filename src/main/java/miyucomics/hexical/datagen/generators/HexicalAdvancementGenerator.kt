@@ -3,52 +3,55 @@ package miyucomics.hexical.datagen.generators
 import at.petrak.hexcasting.api.mod.HexTags
 import at.petrak.hexcasting.common.lib.HexItems
 import miyucomics.hexical.inits.*
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput
-import net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider
-import net.minecraft.advancement.Advancement
-import net.minecraft.advancement.AdvancementFrame
-import net.minecraft.advancement.criterion.CriterionConditions
-import net.minecraft.advancement.criterion.InventoryChangedCriterion
-import net.minecraft.item.Item
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.predicate.item.ItemPredicate
-import net.minecraft.text.Text
-import net.minecraft.util.Identifier
+import net.minecraft.advancements.Advancement
+import net.minecraft.advancements.FrameType
+import net.minecraft.advancements.CriterionTriggerInstance
+import net.minecraft.advancements.critereon.InventoryChangeTrigger
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.advancements.critereon.ItemPredicate
+import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.core.HolderLookup
+import net.minecraft.data.PackOutput
+import net.minecraftforge.common.data.ForgeAdvancementProvider
+import net.minecraftforge.common.data.ExistingFileHelper
 import java.util.function.Consumer
+import java.util.concurrent.CompletableFuture
 
-class HexicalAdvancementGenerator(generator: FabricDataOutput) : FabricAdvancementProvider(generator) {
-	override fun generateAdvancement(consumer: Consumer<Advancement>) {
-		val root = Advancement.Builder.create()
-			.display(ItemStack(HexicalItems.CURIO_COMPASS),
-				Text.translatable("advancement.hexical:root.title"),
-				Text.translatable("advancement.hexical:root.description"),
-				Identifier("minecraft", "textures/block/blackstone.png"),
-				AdvancementFrame.TASK, true, true, true)
-			.criterion("start_hexcasting", InventoryChangedCriterion.Conditions.items(ItemPredicate.Builder.create().tag(HexTags.Items.GRANTS_ROOT_ADVANCEMENT).build()))
-			.build(consumer, "hexical:root")
+class HexicalAdvancementGenerator() : ForgeAdvancementProvider.AdvancementGenerator {
+    override fun generate(registries: HolderLookup.Provider, consumer: Consumer<Advancement>, existingFileHelper: ExistingFileHelper) {
+		val root = Advancement.Builder.advancement()
+			.display(ItemStack(HexicalItems.CURIO_COMPASS.get()),
+				Component.translatable("advancement.hexical:root.title"),
+				Component.translatable("advancement.hexical:root.description"),
+				ResourceLocation("minecraft", "textures/block/blackstone.png"),
+				FrameType.TASK, true, true, true)
+			.addCriterion("start_hexcasting", InventoryChangeTrigger.TriggerInstance.hasItems(ItemPredicate.Builder.item().of(HexTags.Items.GRANTS_ROOT_ADVANCEMENT).build()))
+			.save(consumer, "hexical:root")
 
-		fun registerAdvancement(name: String, frame: AdvancementFrame, icon: Item, hidden: Boolean, condition: CriterionConditions, parent: Advancement = root): Advancement {
-			return Advancement.Builder.create()
+		fun registerAdvancement(name: String, frame: FrameType, icon: Item, hidden: Boolean, condition: CriterionTriggerInstance, parent: Advancement = root): Advancement {
+			return Advancement.Builder.advancement()
 				.parent(parent)
 				.display(ItemStack(icon),
-					Text.translatable("advancements.hexical.$name.title"),
-					Text.translatable("advancements.hexical.$name.description"),
+					Component.translatable("advancements.hexical.$name.title"),
+					Component.translatable("advancements.hexical.$name.description"),
 					null, frame, true, true, hidden
 				)
-				.criterion(name, condition)
-				.build(consumer, "hexical:$name")
+				.addCriterion(name, condition)
+				.save(consumer, "hexical:$name")
 		}
 
-		registerAdvancement("conjure_cake", AdvancementFrame.CHALLENGE, Items.CAKE, true, ConjureCakeCriterion.Condition())
-		registerAdvancement("conjure_hexxy", AdvancementFrame.CHALLENGE, HexItems.SCRYING_LENS, true, HexxyCriterion.Condition())
-		registerAdvancement("hallucinate", AdvancementFrame.TASK, Items.WHITE_BANNER, false, HallucinateCriterion.Condition())
-		registerAdvancement("diy_conjuring", AdvancementFrame.TASK, Items.SCAFFOLDING, false, DIYCriterion.Condition())
-		registerAdvancement("specklike", AdvancementFrame.TASK, Items.BEACON, false, SpecklikeCriterion.Condition())
+		registerAdvancement("conjure_cake", FrameType.CHALLENGE, Items.CAKE, true, ConjureCakeCriterion.Condition())
+		registerAdvancement("conjure_hexxy", FrameType.CHALLENGE, HexItems.SCRYING_LENS, true, HexxyCriterion.Condition())
+		registerAdvancement("hallucinate", FrameType.TASK, Items.WHITE_BANNER, false, HallucinateCriterion.Condition())
+		registerAdvancement("diy_conjuring", FrameType.TASK, Items.SCAFFOLDING, false, DIYCriterion.Condition())
+		registerAdvancement("specklike", FrameType.TASK, Items.BEACON, false, SpecklikeCriterion.Condition())
 
-		val baseLamp = registerAdvancement("acquire_hand_lamp", AdvancementFrame.TASK, HexicalItems.HAND_LAMP_ITEM, false, InventoryChangedCriterion.Conditions.items(HexicalItems.HAND_LAMP_ITEM))
-		registerAdvancement("educate_lamp", AdvancementFrame.TASK, Items.ENCHANTED_BOOK, false, EducateGenieCriterion.Condition(), baseLamp)
-		registerAdvancement("reload_lamp", AdvancementFrame.TASK, Items.LIGHTNING_ROD, false, ReloadLampCriterion.Condition(), baseLamp)
-		registerAdvancement("acquire_arch_lamp", AdvancementFrame.GOAL, HexicalItems.ARCH_LAMP_ITEM, false, InventoryChangedCriterion.Conditions.items(HexicalItems.ARCH_LAMP_ITEM), baseLamp)
+		val baseLamp = registerAdvancement("acquire_hand_lamp", FrameType.TASK, HexicalItems.HAND_LAMP_ITEM.get(), false, InventoryChangeTrigger.TriggerInstance.hasItems(HexicalItems.HAND_LAMP_ITEM.get()))
+		registerAdvancement("educate_lamp", FrameType.TASK, Items.ENCHANTED_BOOK, false, EducateGenieCriterion.Condition(), baseLamp)
+		registerAdvancement("reload_lamp", FrameType.TASK, Items.LIGHTNING_ROD, false, ReloadLampCriterion.Condition(), baseLamp)
+		registerAdvancement("acquire_arch_lamp", FrameType.GOAL, HexicalItems.ARCH_LAMP_ITEM.get(), false, InventoryChangeTrigger.TriggerInstance.hasItems(HexicalItems.ARCH_LAMP_ITEM.get()), baseLamp)
 	}
 }

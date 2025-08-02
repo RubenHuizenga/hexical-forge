@@ -1,20 +1,16 @@
 package miyucomics.hexical.features.shaders
 
+import net.minecraft.resources.ResourceLocation
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.common.MinecraftForge
 import miyucomics.hexical.misc.InitHook
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.minecraft.util.Identifier
 
 object ClientShaderReceiver : InitHook() {
     override fun init() {
-        ClientPlayConnectionEvents.DISCONNECT.register { _, _ -> ShaderRenderer.setEffect(null) }
-
-        ClientPlayNetworking.registerGlobalReceiver(ServerShaderManager.SHADER_CHANNEL) { client, _, packet, _ ->
-            val shader = packet.readString()
-            if (shader == "null")
-                client.execute { ShaderRenderer.setEffect(null) }
-            else
-                client.execute { ShaderRenderer.setEffect(Identifier(shader)) }
-        }
+        MinecraftForge.EVENT_BUS.register(::initPlayerLoggedOut)
+    }
+    
+    fun initPlayerLoggedOut(event: PlayerEvent.PlayerLoggedOutEvent) {
+        ShaderRenderer.setEffect(null)
     }
 }

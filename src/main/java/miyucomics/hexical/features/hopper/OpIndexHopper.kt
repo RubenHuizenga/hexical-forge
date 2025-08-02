@@ -15,6 +15,6 @@ object OpIndexHopper : ConstMediaAction {
 		if (source !is InventoryEndpoint)
 			throw MishapInvalidIota.of(args[0], 0, "inventory")
 		val inventory = source.inventory
-		return (0 until inventory.size()).map { ItemStackIota.createOptimized(inventory.getStack(it)) }.asActionResult
+		return (0 until inventory.containerSize).map { ItemStackIota.createOptimized(inventory.getItem(it)) }.asActionResult
 	}
 }

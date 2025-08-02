@@ -6,6 +6,8 @@ import kotlin.Pair;
 import miyucomics.hexical.features.charms.CharmUtilities;
 import miyucomics.hexical.features.charms.ServerCharmedUseReceiver;
 import miyucomics.hexical.features.curios.CurioItem;
+import miyucomics.hexical.features.charms.ServerCharmedUseReceiver.CharmedItemUsePacket;
+import miyucomics.hexical.misc.HexicalNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.world.item.ItemStack;

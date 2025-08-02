@@ -4,8 +4,8 @@ import at.petrak.hexcasting.api.casting.castables.ConstMediaAction
 import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.iota.NullIota
-import miyucomics.hexical.casting.environments.HandLampCastEnv
-import miyucomics.hexical.casting.mishaps.NoHandLampMishap
+import miyucomics.hexical.features.lamps.HandLampCastEnv
+import miyucomics.hexical.features.lamps.NeedsHandLampMishap
 import net.minecraft.nbt.CompoundTag
 
 class OpGetHandLampData(private val process: (CastingEnvironment, CompoundTag) -> List<Iota>) : ConstMediaAction {

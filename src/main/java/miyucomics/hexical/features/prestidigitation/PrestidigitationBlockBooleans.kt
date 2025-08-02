@@ -27,9 +27,9 @@ object PrestidigitationBlockBooleans {
     object RegistrySubscriber {
         @SubscribeEvent
         fun onRegister(event: RegisterEvent) {
-            if (event.registryKey == PrestidigitationData.DEFERRED_REGISTER.registryKey) {
+            if (event.registryKey == PrestidigitationHandlersHook.PRESTIDIGITATION_HANDLER.registryKey) {
                 event.register(
-                    PrestidigitationData.DEFERRED_REGISTER.registryKey,
+                    PrestidigitationHandlersHook.PRESTIDIGITATION_HANDLER.registryKey,
                     HexicalMain.id("boolean_block")
                 ) {
                     object : PrestidigitationHandler {

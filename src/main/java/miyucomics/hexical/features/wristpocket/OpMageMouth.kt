@@ -6,30 +6,30 @@ import at.petrak.hexcasting.api.casting.eval.CastingEnvironment
 import at.petrak.hexcasting.api.casting.iota.Iota
 import at.petrak.hexcasting.api.casting.mishaps.MishapBadCaster
 import at.petrak.hexcasting.api.misc.MediaConstants
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.server.level.ServerPlayer
 
 object OpMageMouth : SpellAction {
 	override val argc = 0
 	override fun execute(args: List<Iota>, env: CastingEnvironment): SpellAction.Result {
-		if (env.castingEntity !is ServerPlayerEntity)
+		if (env.castingEntity !is ServerPlayer)
 			throw MishapBadCaster()
 
-		val wristpocket = (env.castingEntity as ServerPlayerEntity).wristpocket
-		if (wristpocket.isOf(Items.POTION) || wristpocket.isOf(Items.HONEY_BOTTLE) || wristpocket.isOf(Items.MILK_BUCKET) || wristpocket.item.isFood)
+		val wristpocket = (env.castingEntity as ServerPlayer).wristpocket
+		if (wristpocket.`is`(Items.POTION) || wristpocket.`is`(Items.HONEY_BOTTLE) || wristpocket.`is`(Items.MILK_BUCKET) || wristpocket.item.isEdible)
 			return SpellAction.Result(Spell(wristpocket), MediaConstants.DUST_UNIT, listOf())
 		throw InedibleWristpocketMishap()
 	}
 
 	private data class Spell(val wristpocket: ItemStack) : RenderedSpell {
 		override fun cast(env: CastingEnvironment) {
-			val caster = env.castingEntity as ServerPlayerEntity
-			val original = caster.getStackInHand(env.castingHand)
-			caster.setStackInHand(env.castingHand, wristpocket)
-			val newStack = wristpocket.finishUsing(env.world, caster)
+			val caster = env.castingEntity as ServerPlayer
+			val original = caster.getItemInHand(env.castingHand)
+			caster.setItemInHand(env.castingHand, wristpocket)
+			val newStack = wristpocket.finishUsingItem(env.world, caster)
 			caster.wristpocket = newStack
-			caster.setStackInHand(env.castingHand, original)
+			caster.setItemInHand(env.castingHand, original)
 		}
 	}
 }

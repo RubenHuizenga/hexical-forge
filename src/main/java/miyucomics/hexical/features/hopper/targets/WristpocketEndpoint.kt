@@ -3,10 +3,10 @@ package miyucomics.hexical.features.hopper.targets
 import miyucomics.hexical.features.hopper.HopperDestination
 import miyucomics.hexical.features.hopper.HopperSource
 import miyucomics.hexical.features.wristpocket.wristpocket
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemStack
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
 
-class WristpocketEndpoint(private val player: PlayerEntity) : HopperSource, HopperDestination {
+class WristpocketEndpoint(private val player: Player) : HopperSource, HopperDestination {
 	override fun getItems(): List<ItemStack> {
 		val stack = player.wristpocket
 		return if (stack.isEmpty) emptyList() else listOf(stack.copy())
@@ -14,10 +14,10 @@ class WristpocketEndpoint(private val player: PlayerEntity) : HopperSource, Hopp
 
 	override fun withdraw(stack: ItemStack, amount: Int): Boolean {
 		val existing = player.wristpocket
-		if (!ItemStack.areItemsEqual(existing, stack)) return false
+		if (!ItemStack.isSameItem(existing, stack)) return false
 		if (existing.count < amount) return false
 
-		existing.decrement(amount)
+		existing.shrink(amount)
 		player.wristpocket = if (existing.isEmpty) ItemStack.EMPTY else existing
 		return true
 	}
@@ -27,18 +27,18 @@ class WristpocketEndpoint(private val player: PlayerEntity) : HopperSource, Hopp
 
 		if (current.isEmpty) {
 			val toInsert = stack.copy()
-			val insertCount = toInsert.count.coerceAtMost(toInsert.maxCount)
+			val insertCount = toInsert.count.coerceAtMost(toInsert.maxStackSize)
 			toInsert.count = insertCount
 			player.wristpocket = toInsert
-			return stack.copy().apply { decrement(insertCount) }.takeIf { !it.isEmpty } ?: ItemStack.EMPTY
+			return stack.copy().apply { shrink(insertCount) }.takeIf { !it.isEmpty } ?: ItemStack.EMPTY
 		}
 
-		if (ItemStack.canCombine(current, stack)) {
-			val space = current.maxCount - current.count
+		if (ItemStack.isSameItemSameTags(current, stack)) {
+			val space = current.maxStackSize - current.count
 			if (space > 0) {
 				val toAdd = stack.count.coerceAtMost(space)
-				current.increment(toAdd)
-				stack.decrement(toAdd)
+				current.grow(toAdd)
+				stack.shrink(toAdd)
 				player.wristpocket = current
 			}
 		}
@@ -49,8 +49,8 @@ class WristpocketEndpoint(private val player: PlayerEntity) : HopperSource, Hopp
 	override fun simulateDeposit(stack: ItemStack): Int {
 		val current = player.wristpocket
 		return when {
-			current.isEmpty -> stack.count.coerceAtMost(stack.maxCount)
-			ItemStack.canCombine(current, stack) -> (current.maxCount - current.count).coerceAtLeast(0).coerceAtMost(stack.count)
+			current.isEmpty -> stack.count.coerceAtMost(stack.maxStackSize)
+			ItemStack.isSameItemSameTags(current, stack) -> (current.maxStackSize - current.count).coerceAtLeast(0).coerceAtMost(stack.count)
 			else -> 0
 		}
 	}

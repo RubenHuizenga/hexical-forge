@@ -5,14 +5,14 @@ import miyucomics.hexical.features.curios.curios.BaseCurio
 import miyucomics.hexical.features.curios.curios.CompassCurio
 import miyucomics.hexical.features.curios.curios.FluteCurio
 import miyucomics.hexical.features.curios.curios.HandbellCurio
-import net.minecraft.item.Item
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.Hand
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.InteractionHand
 
-abstract class CurioItem : Item(Settings().maxCount(1)) {
-	open fun postCharmCast(user: ServerPlayerEntity, item: ItemStack, hand: Hand, world: ServerWorld, stack: List<Iota>) {}
+abstract class CurioItem : Item(Properties().stacksTo(1)) {
+	open fun postCharmCast(user: ServerPlayer, item: ItemStack, hand: InteractionHand, world: ServerLevel, stack: List<Iota>) {}
 
 	companion object {
 		private val specialCurios = mapOf(

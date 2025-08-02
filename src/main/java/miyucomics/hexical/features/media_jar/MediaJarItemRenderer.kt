@@ -1,8 +1,6 @@
 package miyucomics.hexical.features.media_jar
 
-import miyucomics.hexical.blocks.MediaJarBlock
 import miyucomics.hexical.inits.HexicalBlocks
-import miyucomics.hexical.utils.MediaJarRenderStuffs
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.client.renderer.MultiBufferSource

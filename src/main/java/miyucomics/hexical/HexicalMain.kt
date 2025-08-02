@@ -1,8 +1,6 @@
 package miyucomics.hexical
 
 import miyucomics.hexical.inits.*
-import miyucomics.hexical.data.LesserSentinelState
-import miyucomics.hexical.data.prestidigitation.PrestidigitationData
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
 import net.minecraftforge.common.capabilities.CapabilityManager
@@ -26,40 +24,19 @@ class HexicalMain {
         Mixins.addConfiguration("hexical.mixins.json")
         MixinEnvironment.getDefaultEnvironment().side = MixinEnvironment.Side.CLIENT
 
-		PrestidigitationData.createRegistry()
-		PrestidigitationData.DEFERRED_REGISTER.register(MOD_BUS)
-
 		MOD_BUS.addListener(HexicalActions::init)
 		MOD_BUS.addListener(HexicalAdvancements::init)
-		
 		HexicalBlocks.init()
 		HexicalEntities.init()
-
-		HexicalServerEvents.init()
-		
 		MOD_BUS.addListener(HexicalIota::init)
-		
-		HexicalItems.init()
-		HexicalParticles.init()
-		HexicalPotions.init()
-		
-		MOD_BUS.addListener(HexicalRecipe::init)
-		
-		HexicalSounds.init()
-		HexicalNetworking.serverInit()
-
-		LesserSentinelState.register()
-		
-        var evBus = MinecraftForge.EVENT_BUS;
-        evBus.addGenericListener(ItemStack::class.java, HexicalForgeCapabilityHandler::attachItemCaps);
-        evBus.addGenericListener(Entity::class.java, HexicalForgeCapabilityHandler::attachEntityCaps);
-
-		// New
-		HexicalIota.init()
 		HexicalItems.init()
 		HexicalParticles.init()
 		HexicalSounds.init()
 		HexicalHooksServer.init()
+		
+        var evBus = MinecraftForge.EVENT_BUS;
+        evBus.addGenericListener(ItemStack::class.java, HexicalForgeCapabilityHandler::attachItemCaps);
+        evBus.addGenericListener(Entity::class.java, HexicalForgeCapabilityHandler::attachEntityCaps);
 	}
 
 	companion object {
