@@ -45,8 +45,8 @@ object MediaLogRenderer : InitHook() {
 
 		for (phase in phases) {
 			val localProgress = (progress - phase.start) / phase.duration
-			if (localProgress in 0f..1f)
-				phase.render(context, localProgress)
+			if (localProgress > 0f)
+				phase.render(context, Mth.clamp(localProgress, 0f, 1f))
 		}
 
 		context.pose().popPose()

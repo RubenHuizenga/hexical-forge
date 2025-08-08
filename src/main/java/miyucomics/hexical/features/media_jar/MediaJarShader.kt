@@ -18,57 +18,56 @@ import java.io.IOException
 import java.util.function.Function
 import com.mojang.blaze3d.vertex.VertexFormat
 import com.mojang.blaze3d.vertex.DefaultVertexFormat
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
 
+@Mod.EventBusSubscriber(modid = HexicalMain.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = [Dist.CLIENT])
 object MediaJarShader : InitHook() {
    	val PERLIN_NOISE: ResourceLocation = HexicalMain.id("textures/misc/perlin.png")
 
-    fun mediaJar(): RenderType {
-        return CustomRenderTypes.MEDIA_JAR.apply(PERLIN_NOISE)
-    }
+    @Volatile
+    private var shaderInstance: ShaderInstance? = null
+    
+    fun getShader(): ShaderInstance = shaderInstance 
+        ?: throw IllegalStateException("Shader not loaded yet!")
+
+    fun mediaJar(): RenderType = createMediaJarType(PERLIN_NOISE)
 
     override fun init() {
-        MinecraftForge.EVENT_BUS.register(::initRegisterShadersEvent)
+        // Done this using event bus subscribtion, even if I don't fully understand that yet
     }
     
+    @SubscribeEvent
     fun initRegisterShadersEvent(event: RegisterShadersEvent) {
-        event.registerShader(
-            ShaderInstance(
-                event.resourceProvider,
-                HexicalMain.id("media_jar"),
-                DefaultVertexFormat.NEW_ENTITY                
-            )
-        ) { shaderInstance ->
-            CustomRenderTypes.mediaJarShader = shaderInstance
+        try {
+            event.registerShader(
+                ShaderInstance(
+                    event.resourceProvider,
+                    HexicalMain.id("media_jar"),
+                    DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL                
+                )
+            ) { loadedShader ->
+                shaderInstance = loadedShader
+            }
+        } catch (e: IOException) {
+            HexicalMain.LOGGER.error("Shader loading failed", e)
         }
     }
 
-    private class CustomRenderTypes private constructor() : RenderType(
-        "", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 0, false, false, {}, {}
-    ) {
-        companion object {
-            internal var mediaJarShader: ShaderInstance? = null
-            private val MEDIA_JAR_SHADER_STATE = RenderStateShard.ShaderStateShard { mediaJarShader }
-            val MEDIA_JAR: Function<ResourceLocation, RenderType> = Util.memoize(Companion::createMediaJarType)
-
-            private fun createMediaJarType(texture: ResourceLocation): RenderType {
-                val state = RenderType.CompositeState.builder()
-                    .setShaderState(MEDIA_JAR_SHADER_STATE)
-                    .setTextureState(RenderStateShard.TextureStateShard(texture, false, false))
-                    .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-                    .setLightmapState(RenderStateShard.NO_LIGHTMAP)
-                    .setOverlayState(RenderStateShard.NO_OVERLAY)
-                    .createCompositeState(true)
-
-                return create(
-                    "${HexicalMain.MOD_ID}_media_jar",
-                    DefaultVertexFormat.NEW_ENTITY,
-                    VertexFormat.Mode.QUADS,
-                    256,
-                    true,
-                    false,
-                    state
-                )
-            }
-        }
+    private fun createMediaJarType(texture: ResourceLocation): RenderType {
+        return RenderType.create(
+            "${HexicalMain.MOD_ID}_media_jar",
+            DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL,
+            VertexFormat.Mode.QUADS,
+            512, 
+            true,
+            false,
+            RenderType.CompositeState.builder()
+                .setShaderState(RenderStateShard.ShaderStateShard { getShader() })
+                .setTextureState(RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
+                .setLightmapState(RenderStateShard.NO_LIGHTMAP)
+                .setOverlayState(RenderStateShard.NO_OVERLAY)
+                .createCompositeState(true)
+        )
     }
 }

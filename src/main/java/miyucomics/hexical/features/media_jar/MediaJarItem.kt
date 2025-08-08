@@ -21,8 +21,19 @@ import net.minecraft.world.inventory.ClickAction
 import net.minecraft.world.level.Level
 import kotlin.math.max
 import kotlin.math.min
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
+import net.minecraftforge.client.extensions.common.IClientItemExtensions
+import java.util.function.Consumer
 
 class MediaJarItem : BlockItem(HexicalBlocks.MEDIA_JAR_BLOCK.get(), Properties().stacksTo(1)) {
+	override fun initializeClient(consumer: Consumer<IClientItemExtensions>) {
+		consumer.accept(object : IClientItemExtensions {
+			override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
+				return MediaJarItemRenderer()
+			}
+		})
+	}
+
 	override fun appendHoverText(stack: ItemStack, world: Level?, list: MutableList<Component>, tooltipContext: TooltipFlag) {
 		val tag = stack.tag?.getCompound("BlockEntityTag")
 		val media = tag?.getLong("media") ?: 0
